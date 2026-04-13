@@ -67,15 +67,6 @@ Place screenshots or terminal GIFs in this section. Recommended captures:
 | Exploit wizard | Guided phase 6 workflow for a selected finding |
 | Report viewer | Rendered report content from stored findings |
 
-Suggested markdown slots:
-
-```md
-![Splash](docs/screenshots/splash.png)
-![Dashboard](docs/screenshots/dashboard.png)
-![Phase Runner](docs/screenshots/phase-runner.png)
-![Exploit Wizard](docs/screenshots/exploit-wizard.png)
-![Report Viewer](docs/screenshots/report-viewer.png)
-```
 
 ## 4. Features Overview
 
