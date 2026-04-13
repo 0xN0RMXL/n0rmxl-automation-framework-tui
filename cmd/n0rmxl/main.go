@@ -17,13 +17,13 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	cfgpkg "github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/engine"
-	"github.com/n0rmxl/n0rmxl/internal/installer"
-	notifypkg "github.com/n0rmxl/n0rmxl/internal/integrations/notify"
-	"github.com/n0rmxl/n0rmxl/internal/models"
-	phasespkg "github.com/n0rmxl/n0rmxl/internal/phases"
-	"github.com/n0rmxl/n0rmxl/internal/tui"
+	cfgpkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/installer"
+	notifypkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/integrations/notify"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
+	phasespkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -1183,3 +1183,4 @@ func openPath(path string) error {
 	}
 	return cmd.Start()
 }
+

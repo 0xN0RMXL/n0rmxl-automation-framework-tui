@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/n0rmxl/n0rmxl/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
 )
 
 const payloadsAllTheThingsRepo = "https://github.com/swisskyrepo/PayloadsAllTheThings.git"
@@ -103,3 +103,4 @@ func syncGitRepository(ctx context.Context, repoURL string, targetPath string) e
 	}
 	return nil
 }
+

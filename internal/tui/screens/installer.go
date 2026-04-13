@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/installer"
-	"github.com/n0rmxl/n0rmxl/internal/tui/components"
-	"github.com/n0rmxl/n0rmxl/internal/tui/theme"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/installer"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/components"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
 )
 
 type installerProgressMsg struct {
@@ -288,3 +288,4 @@ func waitInstallerProgressCmd(progress <-chan installer.ToolJob) tea.Cmd {
 		return installerProgressMsg{Job: job}
 	}
 }
+

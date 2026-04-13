@@ -3,7 +3,7 @@ package burp
 import (
 	"testing"
 
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 func TestBurpPingOffline(t *testing.T) {
@@ -47,3 +47,4 @@ func TestBurpIssuesToFindings(t *testing.T) {
 		t.Fatalf("expected CORS issue to map to cors, got %q", findings[2].VulnClass)
 	}
 }
+

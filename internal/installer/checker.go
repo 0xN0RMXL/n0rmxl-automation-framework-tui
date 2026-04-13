@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/n0rmxl/n0rmxl/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
 )
 
 type CheckResult struct {
@@ -93,3 +93,4 @@ func defaultDataDir() string {
 	}
 	return filepath.Join(home, ".local", "share", "n0rmxl")
 }
+

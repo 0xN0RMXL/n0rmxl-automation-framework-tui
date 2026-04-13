@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/engine"
-	burppkg "github.com/n0rmxl/n0rmxl/internal/integrations/burp"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
+	burppkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/integrations/burp"
 )
 
 func buildBurpActiveJobs(ctx phase5Context) []*engine.Job {
@@ -147,3 +147,4 @@ func buildBurpActiveJobs(ctx phase5Context) []*engine.Job {
 	}
 	return []*engine.Job{job}
 }
+

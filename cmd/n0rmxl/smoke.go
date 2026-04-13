@@ -11,11 +11,11 @@ import (
 	"sort"
 	"strings"
 
-	cfgpkg "github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/engine"
-	"github.com/n0rmxl/n0rmxl/internal/installer"
-	"github.com/n0rmxl/n0rmxl/internal/models"
-	phasespkg "github.com/n0rmxl/n0rmxl/internal/phases"
+	cfgpkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/installer"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
+	phasespkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases"
 	"github.com/spf13/cobra"
 )
 
@@ -449,3 +449,4 @@ func fileExistsPath(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
 }
+

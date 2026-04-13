@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/engine"
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 type phase1Context struct {
@@ -450,3 +450,4 @@ func expandHome(path string) string {
 	}
 	return filepath.Join(home, strings.TrimPrefix(path, "~/"))
 }
+

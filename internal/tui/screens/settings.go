@@ -12,8 +12,8 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/tui/theme"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
 )
 
 type settingsTab int
@@ -541,3 +541,4 @@ func testBurpConnectionCmd(apiURL string) tea.Cmd {
 		return burpTestResultMsg{online: false, message: fmt.Sprintf("status %d", resp.StatusCode)}
 	}
 }
+

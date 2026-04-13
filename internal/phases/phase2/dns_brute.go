@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/engine"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
 )
 
 func buildDNSBruteJobs(ctx phase2Context) dnsBruteOutput {
@@ -156,3 +156,4 @@ func buildDNSBruteJobs(ctx phase2Context) dnsBruteOutput {
 
 	return dnsBruteOutput{Jobs: jobs, MergeJobID: mergePhase2.ID}
 }
+

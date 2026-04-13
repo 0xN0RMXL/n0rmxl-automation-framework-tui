@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 type ReportData struct {
@@ -183,3 +183,4 @@ func loadFindings(workspace models.Workspace) ([]models.Finding, error) {
 	defer db.Close()
 	return models.GetFindings(db, models.FindingFilter{})
 }
+

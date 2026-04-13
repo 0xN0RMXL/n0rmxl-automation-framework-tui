@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/engine"
-	screenshotpkg "github.com/n0rmxl/n0rmxl/internal/integrations/screenshot"
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
+	screenshotpkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/integrations/screenshot"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 type phase7Context struct {
@@ -534,3 +534,4 @@ func markSkipped(job *engine.Job, reason string) {
 	job.ErrorMsg = reason
 	job.LogLine("[WARN] " + reason)
 }
+

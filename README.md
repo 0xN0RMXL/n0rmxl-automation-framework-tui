@@ -25,7 +25,7 @@ N0RMXL is a TUI-first bug bounty automation framework built for real hunting wor
 Core identity:
 
 - Name: N0RMXL Automation Framework TUI
-- Module: github.com/n0rmxl/n0rmxl
+- Module: github.com/0xN0RMXL/n0rmxl-automation-framework-tui
 - Binary: n0rmxl
 - License: MIT
 - Primary platform: Linux (Ubuntu 22.04+ / Debian 12+)
@@ -168,7 +168,7 @@ For fastest setup, use the Linux amd64 pre-built artifact named n0rmxl-linux-amd
 If you download it from release assets:
 
 ```bash
-wget https://github.com/n0rmxl/n0rmxl/releases/latest/download/n0rmxl-linux-amd64
+wget https://github.com/0xN0RMXL/n0rmxl-automation-framework-tui/releases/latest/download/n0rmxl-linux-amd64
 chmod +x n0rmxl-linux-amd64
 sudo install -m 0755 n0rmxl-linux-amd64 /usr/local/bin/n0rmxl
 n0rmxl version
@@ -187,14 +187,14 @@ This pre-built path avoids local compile time and is the quickest way to start s
 ### Method B: Install with go install
 
 ```bash
-go install github.com/n0rmxl/n0rmxl/cmd/n0rmxl@latest
+go install github.com/0xN0RMXL/n0rmxl-automation-framework-tui/cmd/n0rmxl@latest
 n0rmxl version
 ```
 
 ### Method C: Build from source
 
 ```bash
-git clone https://github.com/n0rmxl/n0rmxl
+git clone https://github.com/0xN0RMXL/n0rmxl-automation-framework-tui
 cd n0rmxl
 go build -ldflags="-s -w" -trimpath -o bin/n0rmxl ./cmd/n0rmxl
 ./bin/n0rmxl version
@@ -1263,7 +1263,7 @@ Contributions are welcome across tooling, exploit modules, reporting, and stabil
 Typical flow:
 
 ```bash
-git clone https://github.com/n0rmxl/n0rmxl
+git clone https://github.com/0xN0RMXL/n0rmxl-automation-framework-tui
 cd n0rmxl
 make build
 make test
@@ -1295,3 +1295,4 @@ N0RMXL is for authorized security testing and bug bounty programs only.
 - The authors and contributors are not responsible for misuse.
 
 Use responsibly, report ethically, and respect program rules.
+

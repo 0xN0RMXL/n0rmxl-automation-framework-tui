@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/engine"
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 func buildJSAnalysisJobs(ctx phase4Context, mergeURLsID string) []*engine.Job {
@@ -246,3 +246,4 @@ func selectPythonBinary() string {
 	}
 	return "python"
 }
+

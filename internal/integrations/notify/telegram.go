@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 type TelegramNotifier struct {
@@ -78,3 +78,4 @@ func (t *TelegramNotifier) sendPhoto(filePath string, caption string) error {
 	endpoint := fmt.Sprintf("https://api.telegram.org/bot%s/sendPhoto", t.token)
 	return postMultipartWithRetry(t.client, endpoint, fields, "photo", filepath.Base(filePath), file)
 }
+

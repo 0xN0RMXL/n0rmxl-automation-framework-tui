@@ -3,7 +3,7 @@ package phases
 import (
 	"testing"
 
-	"github.com/n0rmxl/n0rmxl/internal/phases/testutil"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/testutil"
 )
 
 func TestPhaseJobCounts(t *testing.T) {
@@ -47,3 +47,4 @@ func TestPhaseJobCounts(t *testing.T) {
 		t.Fatalf("expected total phase jobs to exceed 200, got %d", total)
 	}
 }
+

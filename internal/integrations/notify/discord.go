@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 type DiscordNotifier struct {
@@ -76,3 +76,4 @@ func discordColor(sev models.Severity) int {
 		return 0x9AA0A6
 	}
 }
+

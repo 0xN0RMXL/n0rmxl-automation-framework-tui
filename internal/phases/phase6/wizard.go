@@ -6,9 +6,9 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/models"
-	"github.com/n0rmxl/n0rmxl/internal/phases/phase6/exploits"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/phase6/exploits"
 )
 
 type WizardState string
@@ -140,3 +140,4 @@ func (w *ExploitWizard) SetState(state WizardState) {
 func (w *ExploitWizard) State() WizardState {
 	return w.state
 }
+

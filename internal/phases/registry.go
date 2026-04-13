@@ -3,19 +3,19 @@ package phases
 import (
 	"fmt"
 
-	"github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/engine"
-	"github.com/n0rmxl/n0rmxl/internal/models"
-	"github.com/n0rmxl/n0rmxl/internal/phases/phase0"
-	"github.com/n0rmxl/n0rmxl/internal/phases/phase1"
-	"github.com/n0rmxl/n0rmxl/internal/phases/phase2"
-	"github.com/n0rmxl/n0rmxl/internal/phases/phase3"
-	"github.com/n0rmxl/n0rmxl/internal/phases/phase4"
-	"github.com/n0rmxl/n0rmxl/internal/phases/phase5"
-	"github.com/n0rmxl/n0rmxl/internal/phases/phase6"
-	"github.com/n0rmxl/n0rmxl/internal/phases/phase7"
-	"github.com/n0rmxl/n0rmxl/internal/phases/phase8"
-	"github.com/n0rmxl/n0rmxl/internal/phases/phase9"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/phase0"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/phase1"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/phase2"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/phase3"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/phase4"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/phase5"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/phase6"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/phase7"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/phase8"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/phase9"
 )
 
 func JobsForPhase(phase int, target *models.Target, ws models.Workspace, runCfg *config.RunConfig) ([]*engine.Job, error) {
@@ -44,3 +44,4 @@ func JobsForPhase(phase int, target *models.Target, ws models.Workspace, runCfg 
 		return nil, fmt.Errorf("invalid phase %d", phase)
 	}
 }
+

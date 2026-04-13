@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 func TestPhaseRunnerEmpty(t *testing.T) {
@@ -142,3 +142,4 @@ func TestPhaseRunnerCheckpointSkip(t *testing.T) {
 		t.Fatalf("expected follow-up job to run successfully, ran=%t status=%q", ran, followUp.Status)
 	}
 }
+

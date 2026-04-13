@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/engine"
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 func SampleRunContext(root string, domain string) (*models.Target, models.Workspace, *config.RunConfig, error) {
@@ -88,3 +88,4 @@ func ValidateDependencies(jobs []*engine.Job) error {
 	}
 	return nil
 }
+

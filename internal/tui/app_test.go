@@ -3,7 +3,7 @@ package tui
 import (
 	"testing"
 
-	"github.com/n0rmxl/n0rmxl/internal/tui/screens"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/screens"
 )
 
 func TestSplashNavigateInstallerStartsInstallerFlow(t *testing.T) {
@@ -37,3 +37,4 @@ func TestNavigateToInstallerStartsInstallerFlow(t *testing.T) {
 		t.Fatal("expected installer navigation command to emit a message")
 	}
 }
+

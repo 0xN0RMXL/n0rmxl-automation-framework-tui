@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 type BurpClient struct {
@@ -428,3 +428,4 @@ func defaultCVSSForSeverity(sev models.Severity) float64 {
 		return 0
 	}
 }
+

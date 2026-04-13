@@ -12,12 +12,12 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	cfgpkg "github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/engine"
-	"github.com/n0rmxl/n0rmxl/internal/models"
-	phasespkg "github.com/n0rmxl/n0rmxl/internal/phases"
-	"github.com/n0rmxl/n0rmxl/internal/tui/components"
-	"github.com/n0rmxl/n0rmxl/internal/tui/theme"
+	cfgpkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
+	phasespkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/components"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
 )
 
 type phaseRunnerTickMsg time.Time
@@ -800,3 +800,4 @@ func max(a int, b int) int {
 	}
 	return b
 }
+

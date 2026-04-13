@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 func TestMergeAndDedup(t *testing.T) {
@@ -87,3 +87,4 @@ func TestScopeFilter(t *testing.T) {
 		t.Fatalf("expected 2 scoped lines, got %d", count)
 	}
 }
+

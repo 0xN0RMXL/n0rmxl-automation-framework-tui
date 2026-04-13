@@ -13,10 +13,10 @@ import (
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
-	cfgpkg "github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/models"
-	"github.com/n0rmxl/n0rmxl/internal/tui/components"
-	"github.com/n0rmxl/n0rmxl/internal/tui/theme"
+	cfgpkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/components"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
 )
 
 type campaignTargetSummary struct {
@@ -690,3 +690,4 @@ func statusRank(status models.PhaseStatus) int {
 		return 5
 	}
 }
+

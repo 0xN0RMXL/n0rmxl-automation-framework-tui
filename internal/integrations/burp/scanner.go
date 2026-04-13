@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 type Scanner struct {
@@ -50,3 +50,4 @@ func (s *Scanner) ActiveScanURLs(target string, urls []string, progress chan<- f
 	}
 	return s.client.IssuesToFindings(issues, target), nil
 }
+

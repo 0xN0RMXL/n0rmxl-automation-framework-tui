@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	cfgpkg "github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/installer"
+	cfgpkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/installer"
 )
 
 func TestRunSmokePreflightFailsMinToolsThreshold(t *testing.T) {
@@ -158,3 +158,4 @@ func TestFindMissingScriptDependenciesForPhasesEnforcesNeededPhases(t *testing.T
 		t.Fatal("expected phase 4 smoke to require script dependencies")
 	}
 }
+

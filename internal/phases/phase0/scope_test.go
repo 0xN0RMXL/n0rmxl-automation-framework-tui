@@ -3,7 +3,7 @@ package phase0
 import (
 	"testing"
 
-	"github.com/n0rmxl/n0rmxl/internal/phases/testutil"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases/testutil"
 )
 
 func phase0Jobs(t *testing.T) int {
@@ -37,3 +37,4 @@ func TestPhase0NoNilJobs(t *testing.T) {
 		}
 	}
 }
+

@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/n0rmxl/n0rmxl/internal/tui/theme"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
 )
 
 type SpinnerModel struct {
@@ -44,3 +44,4 @@ func (m *SpinnerModel) SetLabel(label string) {
 func (m *SpinnerModel) SetStyle(style spinner.Spinner) {
 	m.spinner.Spinner = style
 }
+

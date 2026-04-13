@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 func InitWorkspace(rootDir string, target *models.Target) (models.Workspace, error) {
@@ -187,3 +187,4 @@ func expandHome(path string) string {
 	}
 	return filepath.Join(home, strings.TrimPrefix(path, "~/"))
 }
+

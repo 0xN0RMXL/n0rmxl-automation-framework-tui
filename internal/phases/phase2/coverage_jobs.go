@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/engine"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
 )
 
 func buildCoverageJobs(ctx phase2Context, httpxProbeID string, extractLiveID string, naabuID string, gowitnessID string) []*engine.Job {
@@ -164,3 +164,4 @@ func writeStatusFilteredHosts(httpxJSON string, output string, codes ...int) err
 	sort.Strings(rows)
 	return writeLines(output, dedupSorted(rows))
 }
+

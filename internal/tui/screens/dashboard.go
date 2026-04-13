@@ -9,9 +9,9 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/n0rmxl/n0rmxl/internal/models"
-	"github.com/n0rmxl/n0rmxl/internal/tui/components"
-	"github.com/n0rmxl/n0rmxl/internal/tui/theme"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/components"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
 )
 
 type dashboardLoadedMsg struct {
@@ -268,3 +268,4 @@ func dashboardTickCmd() tea.Cmd {
 		return dashboardTickMsg(t)
 	})
 }
+

@@ -1,4 +1,4 @@
-module github.com/n0rmxl/n0rmxl
+module github.com/0xN0RMXL/n0rmxl-automation-framework-tui
 
 go 1.26.1
 
@@ -71,3 +71,4 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
+

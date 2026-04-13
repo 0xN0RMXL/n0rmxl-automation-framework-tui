@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/n0rmxl/n0rmxl/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
 )
 
 func TestRegisterPayloadLibrariesAddsJob(t *testing.T) {
@@ -68,3 +68,4 @@ func TestPayloadLibraryStatus(t *testing.T) {
 		t.Fatal("expected payload library to be ready after README marker")
 	}
 }
+

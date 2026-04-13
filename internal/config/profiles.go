@@ -3,7 +3,7 @@ package config
 import (
 	"strings"
 
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 type ToolOverrides struct {
@@ -51,3 +51,4 @@ func normalizeProfile(profile models.StealthProfile, cfg *Config) models.Stealth
 	}
 	return models.Normal
 }
+

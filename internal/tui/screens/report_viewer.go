@@ -12,7 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
-	"github.com/n0rmxl/n0rmxl/internal/tui/theme"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
 )
 
 type reportLoadedMsg struct {
@@ -237,3 +237,4 @@ func copyPathCmd(path string) tea.Cmd {
 		return reportActionMsg{message: "copied path to clipboard"}
 	}
 }
+

@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/n0rmxl/n0rmxl/internal/tui/theme"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
 )
 
 type LogViewer struct {
@@ -84,3 +84,4 @@ func levelPrefix(level string) string {
 		return lipgloss.NewStyle().Foreground(theme.Muted).Bold(true).Render("[INFO]")
 	}
 }
+

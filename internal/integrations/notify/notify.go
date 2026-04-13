@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 type Notifier struct {
@@ -174,3 +174,4 @@ func safe(value string, fallback string) string {
 	}
 	return strings.TrimSpace(value)
 }
+

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/engine"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
 )
 
 func buildCRTSHJobs(ctx phase1Context, asnmapIPsID string) []*engine.Job {
@@ -115,3 +115,4 @@ func buildCRTSHJobs(ctx phase1Context, asnmapIPsID string) []*engine.Job {
 
 	return jobs
 }
+

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 func TestDefaultTextValue(t *testing.T) {
@@ -173,3 +173,4 @@ func TestVersionCommand(t *testing.T) {
 		t.Fatalf("expected version output to mention n0rmxl, got %q", string(output))
 	}
 }
+

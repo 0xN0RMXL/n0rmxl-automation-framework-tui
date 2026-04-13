@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 func TestCheckpointRoundTrip(t *testing.T) {
@@ -102,3 +102,4 @@ func TestCheckpointReset(t *testing.T) {
 		t.Fatalf("expected phase pending after reset, got %q", status)
 	}
 }
+

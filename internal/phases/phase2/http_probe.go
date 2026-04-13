@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/engine"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
 )
 
 func buildHTTPProbeJobs(ctx phase2Context, mergeJobID string) httpProbeOutput {
@@ -130,3 +130,4 @@ func buildHTTPProbeJobs(ctx phase2Context, mergeJobID string) httpProbeOutput {
 
 	return httpProbeOutput{Jobs: jobs, ProbeID: httpxProbe.ID, ExtractLiveID: extractLive.ID}
 }
+

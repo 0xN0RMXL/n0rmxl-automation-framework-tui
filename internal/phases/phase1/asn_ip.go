@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/n0rmxl/n0rmxl/internal/engine"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
 )
 
 func buildASNIPJobs(ctx phase1Context) ([]*engine.Job, string) {
@@ -248,3 +248,4 @@ func buildASNIPJobs(ctx phase1Context) ([]*engine.Job, string) {
 
 	return jobs, asnmapIPs.ID
 }
+

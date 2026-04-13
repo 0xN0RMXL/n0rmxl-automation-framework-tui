@@ -6,8 +6,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/n0rmxl/n0rmxl/internal/config"
-	"github.com/n0rmxl/n0rmxl/internal/models"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 )
 
 func TestNotifyMinSeverityFilter(t *testing.T) {
@@ -75,3 +75,4 @@ func TestNotifyDisabledChannel(t *testing.T) {
 		t.Fatalf("expected exactly one enabled-channel request, got %d", got)
 	}
 }
+
