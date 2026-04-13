@@ -1,0 +1,9 @@
+# Wildcards
+*.example.com
+
+# Explicit
+
+# CIDRs
+
+# Out of Scope
+
