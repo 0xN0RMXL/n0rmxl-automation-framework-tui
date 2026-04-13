@@ -2,10 +2,10 @@ package installer
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
@@ -54,15 +54,15 @@ func CheckGoEnv() (goVersion string, goPath string, err error) {
 }
 
 func CheckPythonEnv() (pythonVersion string, pipVersion string, err error) {
-	pythonCmd := "python --version"
-	if runtime.GOOS == "linux" {
-		pythonCmd = "python3 --version"
+	pythonExec := detectPythonCommand()
+	if pythonExec == "" {
+		return "", "", fmt.Errorf("python runtime not found")
 	}
-	pyOut, pyErr := runShellCommand(context.Background(), pythonCmd)
+	pyOut, pyErr := runShellCommand(context.Background(), fmt.Sprintf("%s --version", pythonExec))
 	if pyErr != nil {
 		return "", "", pyErr
 	}
-	pipOut, pipErr := runShellCommand(context.Background(), "python -m pip --version")
+	pipOut, pipErr := runShellCommand(context.Background(), fmt.Sprintf("%s -m pip --version", pythonExec))
 	if pipErr != nil {
 		return strings.TrimSpace(pyOut), "", pipErr
 	}
@@ -79,7 +79,11 @@ func detectVersion(name string) string {
 		}
 	}
 	if name == "python" || name == "python3" {
-		if out, err := runShellCommand(context.Background(), "python --version"); err == nil {
+		pythonExec := detectPythonCommand()
+		if pythonExec == "" {
+			return "unknown"
+		}
+		if out, err := runShellCommand(context.Background(), fmt.Sprintf("%s --version", pythonExec)); err == nil {
 			return strings.TrimSpace(out)
 		}
 	}
@@ -93,4 +97,3 @@ func defaultDataDir() string {
 	}
 	return filepath.Join(home, ".local", "share", "n0rmxl")
 }
-

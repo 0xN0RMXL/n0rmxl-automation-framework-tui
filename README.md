@@ -201,15 +201,24 @@ go build -ldflags="-s -w" -trimpath -o bin/n0rmxl ./cmd/n0rmxl
 ./bin/n0rmxl version
 ```
 
-### Python setup guide (do this before n0rmxl install)
+### Python setup automation (no manual Python prep on Linux/WSL2)
 
-N0RMXL installs many Python-based tools during `n0rmxl install`. To avoid failed installs and PATH issues, set up Python first.
+N0RMXL auto-bootstraps Python runtime tooling during `n0rmxl install` for supported package-manager environments (Linux/WSL2 primary). In typical Linux usage, you only need Go and `n0rmxl` installed manually.
+
+Run installer directly:
+
+```bash
+n0rmxl install
+n0rmxl install --check
+```
+
+If bootstrap fails because your package manager is unavailable or blocked, use the manual steps below.
 
 #### pip vs pipx (what you actually need)
 
-- Required: pip. The installer uses `python -m pip ...` (and falls back to `pip3 ...`) for Python tool dependencies.
-- Optional: pipx. Useful for isolated CLI app installs, but not a replacement for pip in N0RMXL's installer flow.
-- Recommended: install both pip and pipx, keep `python3` and `pip3` available in PATH.
+- Required by runtime: Python 3 and pip.
+- Automated by installer on Linux/WSL2: python3, python3-pip, python3-venv, pipx.
+- Optional: pipx for isolated Python CLI workflows outside N0RMXL.
 
 #### Linux / WSL2 (recommended runtime)
 
@@ -1251,10 +1260,10 @@ jobs:
 	validate:
 		runs-on: ubuntu-latest
 		steps:
-			- uses: actions/checkout@v4
-			- uses: actions/setup-go@v5
+			- uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+			- uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
 				with:
-					go-version: '1.26.1'
+					go-version-file: go.mod
 			- run: go build ./...
 			- run: go vet ./...
 			- run: go test -count=1 -timeout 180s ./...
@@ -1311,12 +1320,14 @@ Ensure Go bin path and installed tool paths are available in runtime environment
 
 ### Python tools fail to install
 
+- Verify bootstrap precheck job status: `python-runtime` in `n0rmxl install --check` output.
 - Verify Python binary path in config (`tools.python_bin`) matches `command -v python3`.
 - Confirm pip works directly: `python3 -m pip --version`.
 - Upgrade packaging stack: `python3 -m pip install --upgrade pip setuptools wheel`.
 - Ensure CLI paths are exported: `~/.local/bin` and `~/go/bin` in PATH.
 - Re-run `n0rmxl install --check`, then `n0rmxl install`.
-- On Ubuntu 23.04+/Debian 12+, externally-managed Python may require installer pip flags; N0RMXL already uses pip compatibility flags, so ensure you are using the project installer commands unchanged.
+- On Ubuntu 23.04+/Debian 12+, externally-managed Python may require installer pip flags; N0RMXL already applies compatible pip flags.
+- If package-manager install is blocked (restricted environment), run the manual Python setup commands from the Installation section, then rerun installer.
 
 ### Vault unlock issues
 

@@ -112,7 +112,7 @@ func (i *Installer) RunCategory(ctx context.Context, category string) error {
 	if category == "system" {
 		workerCount = 1
 	} else if category == "python" {
-		workerCount = 3
+		workerCount = 1
 	} else if category == "wordlist" {
 		workerCount = 2
 	} else if category == "go" {
@@ -246,4 +246,3 @@ func (i *Installer) saveInstallStatus() error {
 	}
 	return nil
 }
-
