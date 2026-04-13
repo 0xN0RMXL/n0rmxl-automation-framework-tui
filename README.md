@@ -154,6 +154,7 @@ Wordlists and payload data include Assetnote DNS lists, trickest resolvers, SecL
 | Other OS | macOS partial support, Windows via WSL2 |
 | Go | 1.22+ to build from source (module target: 1.26.1) |
 | Python | Python 3.10+ for Python-based tools |
+| Python package managers | pip required, pipx optional but recommended for isolated CLI apps |
 | Base utilities | git, curl, wget, build tooling |
 | Disk | ~5GB recommended for tools + wordlists + templates |
 | Memory | 8GB recommended for aggressive profile workflows |
@@ -198,6 +199,94 @@ git clone https://github.com/0xN0RMXL/n0rmxl-automation-framework-tui
 cd n0rmxl
 go build -ldflags="-s -w" -trimpath -o bin/n0rmxl ./cmd/n0rmxl
 ./bin/n0rmxl version
+```
+
+### Python setup guide (do this before n0rmxl install)
+
+N0RMXL installs many Python-based tools during `n0rmxl install`. To avoid failed installs and PATH issues, set up Python first.
+
+#### pip vs pipx (what you actually need)
+
+- Required: pip. The installer uses `python -m pip ...` (and falls back to `pip3 ...`) for Python tool dependencies.
+- Optional: pipx. Useful for isolated CLI app installs, but not a replacement for pip in N0RMXL's installer flow.
+- Recommended: install both pip and pipx, keep `python3` and `pip3` available in PATH.
+
+#### Linux / WSL2 (recommended runtime)
+
+```bash
+sudo apt-get update
+sudo apt-get install -y python3 python3-pip python3-venv pipx
+python3 --version
+python3 -m pip --version
+pipx --version
+python3 -m pip install --upgrade pip setuptools wheel
+python3 -m pipx ensurepath
+```
+
+If your shell cannot find user-installed CLI tools, add local bin paths:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$HOME/go/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+#### macOS (partial support)
+
+```bash
+brew install python pipx
+python3 --version
+python3 -m pip --version
+pipx --version
+python3 -m pip install --upgrade pip setuptools wheel
+pipx ensurepath
+```
+
+Typical Python binary locations on macOS:
+
+- Apple Silicon: `/opt/homebrew/bin/python3`
+- Intel: `/usr/local/bin/python3`
+
+#### Windows
+
+Officially, run N0RMXL inside WSL2. If you still need native Python on Windows:
+
+```powershell
+winget install --id Python.Python.3.12 -e
+py -3 --version
+py -3 -m pip --version
+py -3 -m pip install --upgrade pip setuptools wheel
+```
+
+#### Set the correct Python path in config
+
+Find your Python path:
+
+```bash
+command -v python3
+```
+
+Set it in `~/.config/n0rmxl/config.yaml`:
+
+```yaml
+tools:
+	python_bin: /usr/bin/python3
+```
+
+Common values:
+
+- Ubuntu/Debian/WSL2: `/usr/bin/python3`
+- macOS Apple Silicon: `/opt/homebrew/bin/python3`
+- macOS Intel: `/usr/local/bin/python3`
+
+#### Final Python preflight before installer
+
+```bash
+python3 --version
+python3 -m pip --version
+command -v python3
+command -v pip3
+command -v pipx || true
+n0rmxl install --check
 ```
 
 After installing the binary, bootstrap dependencies:
@@ -1219,6 +1308,15 @@ Ensure Go bin path and installed tool paths are available in runtime environment
 - Confirm Go and Python versions.
 - Confirm package manager permissions.
 - Re-run install for idempotent recovery.
+
+### Python tools fail to install
+
+- Verify Python binary path in config (`tools.python_bin`) matches `command -v python3`.
+- Confirm pip works directly: `python3 -m pip --version`.
+- Upgrade packaging stack: `python3 -m pip install --upgrade pip setuptools wheel`.
+- Ensure CLI paths are exported: `~/.local/bin` and `~/go/bin` in PATH.
+- Re-run `n0rmxl install --check`, then `n0rmxl install`.
+- On Ubuntu 23.04+/Debian 12+, externally-managed Python may require installer pip flags; N0RMXL already uses pip compatibility flags, so ensure you are using the project installer commands unchanged.
 
 ### Vault unlock issues
 
