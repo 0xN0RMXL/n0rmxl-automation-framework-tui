@@ -6,126 +6,231 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
+	"strings"
+
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
 )
 
-type GoTool struct {
-	Name string
-	Path string
+type goToolSpec struct {
+	name        string
+	importPath  string
+	binary      string
+	description string
 }
 
-var goTools = []GoTool{
-	{Name: "pdtm", Path: "github.com/projectdiscovery/pdtm/cmd/pdtm"},
-	{Name: "subfinder", Path: "github.com/projectdiscovery/subfinder/v2/cmd/subfinder"},
-	{Name: "httpx", Path: "github.com/projectdiscovery/httpx/cmd/httpx"},
-	{Name: "nuclei", Path: "github.com/projectdiscovery/nuclei/v3/cmd/nuclei"},
-	{Name: "katana", Path: "github.com/projectdiscovery/katana/cmd/katana"},
-	{Name: "dnsx", Path: "github.com/projectdiscovery/dnsx/cmd/dnsx"},
-	{Name: "naabu", Path: "github.com/projectdiscovery/naabu/v2/cmd/naabu"},
-	{Name: "asnmap", Path: "github.com/projectdiscovery/asnmap/cmd/asnmap"},
-	{Name: "uncover", Path: "github.com/projectdiscovery/uncover/cmd/uncover"},
-	{Name: "tlsx", Path: "github.com/projectdiscovery/tlsx/cmd/tlsx"},
-	{Name: "mapcidr", Path: "github.com/projectdiscovery/mapcidr/cmd/mapcidr"},
-	{Name: "interactsh-client", Path: "github.com/projectdiscovery/interactsh/cmd/interactsh-client"},
-	{Name: "notify", Path: "github.com/projectdiscovery/notify/cmd/notify"},
-	{Name: "csprecon", Path: "github.com/edoardottt/csprecon/cmd/csprecon"},
-	{Name: "assetfinder", Path: "github.com/tomnomnom/assetfinder"},
-	{Name: "chaos", Path: "github.com/projectdiscovery/chaos-client/cmd/chaos"},
-	{Name: "github-subdomains", Path: "github.com/gwen001/github-subdomains"},
-	{Name: "gitlab-subdomains", Path: "github.com/gwen001/gitlab-subdomains"},
-	{Name: "related-domains", Path: "github.com/gwen001/related-domains"},
-	{Name: "shosubgo", Path: "github.com/incogbyte/shosubgo"},
-	{Name: "puredns", Path: "github.com/d3mondev/puredns/v2"},
-	{Name: "shuffledns", Path: "github.com/projectdiscovery/shuffledns/cmd/shuffledns"},
-	{Name: "hakrevdns", Path: "github.com/hakluke/hakrevdns"},
-	{Name: "hakip2host", Path: "github.com/hakluke/hakip2host"},
-	{Name: "dnsbruter", Path: "github.com/ImAyrix/dnsbruter"},
-	{Name: "gotator", Path: "github.com/Josue87/gotator"},
-	{Name: "alterx", Path: "github.com/projectdiscovery/alterx/cmd/alterx"},
-	{Name: "hakrawler", Path: "github.com/hakluke/hakrawler"},
-	{Name: "subjs", Path: "github.com/lc/subjs"},
-	{Name: "gau", Path: "github.com/lc/gau/v2/cmd/gau"},
-	{Name: "gauplus", Path: "github.com/bp0lr/gauplus"},
-	{Name: "hakcheckurl", Path: "github.com/hakluke/hakcheckurl"},
-	{Name: "urldedupe", Path: "github.com/ameenmaali/urldedupe"},
-	{Name: "qsreplace", Path: "github.com/tomnomnom/qsreplace"},
-	{Name: "fff", Path: "github.com/tomnomnom/fff"},
-	{Name: "ffuf", Path: "github.com/ffuf/ffuf/v2"},
-	{Name: "kiterunner", Path: "github.com/assetnote/kiterunner/cmd/kr"},
-	{Name: "gf", Path: "github.com/tomnomnom/gf"},
-	{Name: "x8", Path: "github.com/Sh1Yo/x8"},
-	{Name: "dalfox", Path: "github.com/hahwul/dalfox/v2"},
-	{Name: "Gxss", Path: "github.com/KathanP19/Gxss"},
-	{Name: "kxss", Path: "github.com/Emoe/kxss"},
-	{Name: "airixss", Path: "github.com/ferreiraklet/airixss"},
-	{Name: "bxss", Path: "github.com/ethicalhackingplayground/bxss"},
-	{Name: "crlfuzz", Path: "github.com/dwisiswant0/crlfuzz/cmd/crlfuzz"},
-	{Name: "ppmap", Path: "github.com/kleinik0x00/ppmap"},
-	{Name: "headi", Path: "github.com/mlcsec/headi"},
-	{Name: "byp4xx", Path: "github.com/lobuhi/byp4xx"},
-	{Name: "mantra", Path: "github.com/MrEmpy/mantra"},
-	{Name: "jsleak", Path: "github.com/channyein1337/jsleak"},
-	{Name: "subzy", Path: "github.com/PentestPad/subzy"},
-	{Name: "graphw00f", Path: "github.com/dolevf/graphw00f/cmd/graphw00f"},
-	{Name: "grpc-gateway", Path: "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway"},
-	{Name: "gowitness", Path: "github.com/sensepost/gowitness"},
-	{Name: "webanalyze", Path: "github.com/rverton/webanalyze/cmd/webanalyze"},
-	{Name: "fingerprintx", Path: "github.com/praetorian-inc/fingerprintx/cmd/fingerprintx"},
-	{Name: "originiphunter", Path: "github.com/rix4uni/originiphunter"},
-	{Name: "anew", Path: "github.com/tomnomnom/anew"},
-	{Name: "unfurl", Path: "github.com/tomnomnom/unfurl"},
-	{Name: "haktrails", Path: "github.com/hakluke/haktrails"},
-	{Name: "nrich", Path: "gitlab.com/shodan-public/nrich"},
+var goTools = []goToolSpec{
+	{"subfinder", "github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest", "subfinder", "Fast passive subdomain enumeration"},
+	{"httpx", "github.com/projectdiscovery/httpx/cmd/httpx@latest", "httpx", "Fast HTTP probing toolkit"},
+	{"nuclei", "github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest", "nuclei", "Template-based vulnerability scanner"},
+	{"katana", "github.com/projectdiscovery/katana/cmd/katana@latest", "katana", "Modern crawling and spidering framework"},
+	{"dnsx", "github.com/projectdiscovery/dnsx/cmd/dnsx@latest", "dnsx", "DNS toolkit with resolver support"},
+	{"naabu", "github.com/projectdiscovery/naabu/v2/cmd/naabu@latest", "naabu", "Fast TCP port scanner"},
+	{"alterx", "github.com/projectdiscovery/alterx/cmd/alterx@latest", "alterx", "Subdomain permutation generator"},
+	{"asnmap", "github.com/projectdiscovery/asnmap/cmd/asnmap@latest", "asnmap", "ASN and network mapping"},
+	{"uncover", "github.com/projectdiscovery/uncover/cmd/uncover@latest", "uncover", "Search engine based host discovery"},
+	{"tlsx", "github.com/projectdiscovery/tlsx/cmd/tlsx@latest", "tlsx", "TLS metadata extraction"},
+	{"cdncheck", "github.com/projectdiscovery/cdncheck/cmd/cdncheck@latest", "cdncheck", "CDN detection helper"},
+	{"interactsh-client", "github.com/projectdiscovery/interactsh/cmd/interactsh-client@latest", "interactsh-client", "Out-of-band interaction client"},
+	{"shuffledns", "github.com/projectdiscovery/shuffledns/cmd/shuffledns@latest", "shuffledns", "High-speed DNS bruteforcing"},
+	{"mapcidr", "github.com/projectdiscovery/mapcidr/cmd/mapcidr@latest", "mapcidr", "CIDR and IP range tooling"},
+	{"notify", "github.com/projectdiscovery/notify/cmd/notify@latest", "notify", "Cross-channel notifications"},
+	{"pdtm", "github.com/projectdiscovery/pdtm/cmd/pdtm@latest", "pdtm", "ProjectDiscovery tool manager"},
+	{"assetfinder", "github.com/tomnomnom/assetfinder@latest", "assetfinder", "Related domain discovery"},
+	{"waybackurls", "github.com/tomnomnom/waybackurls@latest", "waybackurls", "URL extraction from Wayback"},
+	{"anew", "github.com/tomnomnom/anew@latest", "anew", "Deduplicate and append lines"},
+	{"gf", "github.com/tomnomnom/gf@latest", "gf", "Pattern wrapper around grep"},
+	{"unfurl", "github.com/tomnomnom/unfurl@latest", "unfurl", "URL parser and component extractor"},
+	{"qsreplace", "github.com/tomnomnom/qsreplace@latest", "qsreplace", "Query string value replacement"},
+	{"urinteresting", "github.com/tomnomnom/hacks/urinteresting@latest", "urinteresting", "Interesting URL filter"},
+	{"gau", "github.com/lc/gau/v2/cmd/gau@latest", "gau", "URL aggregation from archival sources"},
+	{"gauplus", "github.com/bp0lr/gauplus@latest", "gauplus", "Enhanced gau URL collection"},
+	{"subjs", "github.com/lc/subjs@latest", "subjs", "JavaScript URL harvesting"},
+	{"hakrawler", "github.com/hakluke/hakrawler@latest", "hakrawler", "Simple crawler"},
+	{"gospider", "github.com/jaeles-project/gospider@latest", "gospider", "Fast recursive web spider"},
+	{"urldedupe", "github.com/ameenmaali/urldedupe@latest", "urldedupe", "URL de-duplication"},
+	{"gowitness", "github.com/sensepost/gowitness@latest", "gowitness", "Web screenshot capture utility"},
+	{"puredns", "github.com/d3mondev/puredns/v2@latest", "puredns", "DNS resolver with wildcard filtering"},
+	{"hakrevdns", "github.com/hakluke/hakrevdns@latest", "hakrevdns", "Reverse DNS lookups"},
+	{"hakip2host", "github.com/hakluke/hakip2host@latest", "hakip2host", "IP-to-hostname mapping"},
+	{"gotator", "github.com/Josue87/gotator@latest", "gotator", "Wordlist permutations"},
+	{"haktrails", "github.com/hakluke/haktrails@latest", "haktrails", "SecurityTrails API client"},
+	{"github-subdomains", "github.com/gwen001/github-subdomains@latest", "github-subdomains", "GitHub code-search subdomain discovery"},
+	{"gitlab-subdomains", "github.com/gwen001/gitlab-subdomains@latest", "gitlab-subdomains", "GitLab code-search subdomain discovery"},
+	{"related-domains", "github.com/gwen001/related-domains@latest", "related-domains", "Registrant-based domain discovery"},
+	{"csprecon", "github.com/edoardottt/csprecon/cmd/csprecon@latest", "csprecon", "CSP header-based recon"},
+	{"shosubgo", "github.com/incogbyte/shosubgo@latest", "shosubgo", "Shodan-driven subdomain discovery"},
+	{"originiphunter", "github.com/rix4uni/originiphunter@latest", "originiphunter", "Origin IP discovery behind CDN"},
+	{"dalfox", "github.com/hahwul/dalfox/v2@latest", "dalfox", "XSS scanner"},
+	{"Gxss", "github.com/KathanP19/Gxss@latest", "Gxss", "Reflected parameter detector"},
+	{"kxss", "github.com/Emoe/kxss@latest", "kxss", "Interesting character reflection detector"},
+	{"airixss", "github.com/ferreiraklet/airixss@latest", "airixss", "XSS helper"},
+	{"bxss", "github.com/ethicalhackingplayground/bxss@latest", "bxss", "Blind XSS injector"},
+	{"crlfuzz", "github.com/dwisiswant0/crlfuzz/cmd/crlfuzz@latest", "crlfuzz", "CRLF injection scanner"},
+	{"ppmap", "github.com/kleiton0x00/ppmap@latest", "ppmap", "Prototype pollution mapper"},
+	{"headi", "github.com/mlcsec/headi@latest", "headi", "Header injection scanner"},
+	{"byp4xx", "github.com/lobuhi/byp4xx@latest", "byp4xx", "HTTP 40x bypass helper"},
+	{"subzy", "github.com/PentestPad/subzy@latest", "subzy", "Subdomain takeover checker"},
+	{"h2csmuggler", "github.com/BishopFox/h2csmuggler@latest", "h2csmuggler", "HTTP/2 request smuggling helper"},
+	{"ffuf", "github.com/ffuf/ffuf/v2@latest", "ffuf", "Content discovery fuzzer"},
+	{"gobuster", "github.com/OJ/gobuster/v3@latest", "gobuster", "Directory and DNS bruteforce tool"},
+	{"webanalyze", "github.com/rverton/webanalyze/cmd/webanalyze@latest", "webanalyze", "Technology fingerprinting"},
+	{"fingerprintx", "github.com/praetorian-inc/fingerprintx/cmd/fingerprintx@latest", "fingerprintx", "Service fingerprinting"},
+	{"jsleak", "github.com/channyein1337/jsleak@latest", "jsleak", "JavaScript secrets discovery"},
+	{"mantra", "github.com/MrEmpy/mantra@latest", "mantra", "Secrets and URL extraction"},
+	{"jsecret", "github.com/m4ll0k/jsecret@latest", "jsecret", "JavaScript secrets scanner"},
+	{"kiterunner", "github.com/assetnote/kiterunner/cmd/kr@latest", "kr", "API route discovery"},
+	{"racepwn", "github.com/dwisiswant0/racepwn/cmd/racepwn@latest", "racepwn", "Race condition tester"},
+	{"amass", "github.com/owasp-amass/amass/v4/cmd/amass@latest", "amass", "OWASP Amass DNS enumeration"},
 }
 
 func RegisterGoTools(i *Installer) {
-	for _, tool := range goTools {
-		goTool := tool
+	cfg := i.cfg
+
+	for _, t := range goTools {
+		tool := t
+		if strings.TrimSpace(tool.importPath) == "" {
+			continue
+		}
 		i.Register(&ToolJob{
-			Name:        goTool.Name,
+			Name:        tool.name,
 			Category:    "go",
-			Description: "Go tool " + goTool.Name,
+			Description: tool.description,
 			Required:    false,
-			CheckFunc: func() bool {
-				_, err := exec.LookPath(goTool.Name)
-				return err == nil
-			},
+			CheckFunc:   goToolCheckFunc(tool.binary, cfg),
 			InstallFunc: func(ctx context.Context, job *ToolJob) error {
-				home, err := os.UserHomeDir()
-				if err != nil {
-					return err
-				}
-				goPath := filepath.Join(home, "go")
-				goBin := filepath.Join(home, "go", "bin")
-				if err := os.MkdirAll(goBin, 0o755); err != nil {
-					return err
-				}
-				cmd := goInstallCommand(goPath, goBin, goTool.Path)
-				_, err = runShellCommand(ctx, cmd)
-				return err
+				return installGoTool(ctx, tool.importPath, cfg)
 			},
 		})
 	}
 
 	i.Register(&ToolJob{
 		Name:        "nuclei-templates",
-		Category:    "go",
-		Description: "Update nuclei templates",
+		Category:    "post-go",
+		Description: "Nuclei template database update",
 		Required:    false,
 		CheckFunc: func() bool {
-			_, err := exec.LookPath("nuclei")
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return false
+			}
+			_, err = os.Stat(filepath.Join(home, "nuclei-templates"))
 			return err == nil
 		},
 		InstallFunc: func(ctx context.Context, job *ToolJob) error {
-			_, err := runShellCommand(ctx, "nuclei -update-templates")
-			return err
+			nucleiBin, err := findBinary("nuclei", cfg)
+			if err != nil {
+				return fmt.Errorf("nuclei not found in PATH or GOPATH/bin: %w", err)
+			}
+
+			goPath := resolveGOPATH(cfg)
+			binPath := filepath.Join(goPath, "bin")
+
+			cmd := exec.CommandContext(ctx, nucleiBin, "-update-templates")
+			cmd.Env = append(os.Environ(),
+				"GOPATH="+goPath,
+				"GOBIN="+binPath,
+				"PATH="+binPath+string(os.PathListSeparator)+os.Getenv("PATH"),
+			)
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				return fmt.Errorf("nuclei -update-templates failed: %w\n%s", err, strings.TrimSpace(string(out)))
+			}
+			return nil
 		},
 	})
 }
 
-func goInstallCommand(goPath string, goBin string, pkg string) string {
-	if runtime.GOOS == "windows" {
-		return fmt.Sprintf("$env:GOPATH='%s' ; $env:PATH='%s;%s' ; go install -v %s@latest", goPath, os.Getenv("PATH"), goBin, pkg)
+func resolveGOPATH(cfg *config.Config) string {
+	if cfg != nil {
+		goBin := strings.TrimSpace(cfg.Tools.GoBin)
+		if goBin != "" {
+			normalized := filepath.Clean(filepath.FromSlash(goBin))
+			if strings.EqualFold(filepath.Base(normalized), "bin") {
+				return filepath.Dir(normalized)
+			}
+			return normalized
+		}
 	}
-	return fmt.Sprintf("GOPATH=%s PATH=%s:%s go install -v %s@latest", goPath, os.Getenv("PATH"), goBin, pkg)
+
+	if gp := strings.TrimSpace(os.Getenv("GOPATH")); gp != "" {
+		return gp
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(home, "go")
+}
+
+func goToolCheckFunc(binaryName string, cfg *config.Config) func() bool {
+	binary := strings.TrimSpace(binaryName)
+	return func() bool {
+		if binary == "" {
+			return false
+		}
+		if _, err := exec.LookPath(binary); err == nil {
+			return true
+		}
+		goPath := resolveGOPATH(cfg)
+		if goPath == "" {
+			return false
+		}
+		candidate := filepath.Join(goPath, "bin", binary)
+		if _, err := os.Stat(candidate); err == nil {
+			return true
+		}
+		return false
+	}
+}
+
+func installGoTool(ctx context.Context, importPath string, cfg *config.Config) error {
+	path := strings.TrimSpace(importPath)
+	if path == "" {
+		return fmt.Errorf("empty go import path")
+	}
+
+	goPath := resolveGOPATH(cfg)
+	if goPath == "" {
+		return fmt.Errorf("unable to resolve GOPATH")
+	}
+	binPath := filepath.Join(goPath, "bin")
+	if err := os.MkdirAll(binPath, 0o755); err != nil {
+		return fmt.Errorf("failed to create go bin directory: %w", err)
+	}
+
+	cmd := exec.CommandContext(ctx, "go", "install", "-v", path)
+	cmd.Env = append(os.Environ(),
+		"GOPATH="+goPath,
+		"GOBIN="+binPath,
+		"PATH="+binPath+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"GOFLAGS=-mod=mod",
+	)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("go install %s failed: %w\noutput: %s", path, err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
+func findBinary(name string, cfg *config.Config) (string, error) {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return "", fmt.Errorf("binary name is empty")
+	}
+
+	if p, err := exec.LookPath(trimmed); err == nil {
+		return p, nil
+	}
+
+	goPath := resolveGOPATH(cfg)
+	if goPath != "" {
+		candidate := filepath.Join(goPath, "bin", trimmed)
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate, nil
+		}
+	}
+
+	return "", fmt.Errorf("%s not found", trimmed)
 }

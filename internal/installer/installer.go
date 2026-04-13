@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
@@ -85,7 +86,7 @@ func (i *Installer) Run(ctx context.Context) error {
 	if len(i.jobs) == 0 {
 		i.RegisterAll()
 	}
-	categories := []string{"system", "go", "python", "wordlist"}
+	categories := []string{"system", "go", "post-go", "python", "wordlist", "binary"}
 	for _, category := range categories {
 		if err := i.RunCategory(ctx, category); err != nil {
 			return err
@@ -108,15 +109,18 @@ func (i *Installer) RunCategory(ctx context.Context, category string) error {
 		return nil
 	}
 
-	workerCount := i.concurrency
-	if category == "system" {
-		workerCount = 1
-	} else if category == "python" {
-		workerCount = 1
-	} else if category == "wordlist" {
+	workerCountMap := map[string]int{
+		"system":   1,
+		"go":       6,
+		"post-go":  1,
+		"python":   3,
+		"wordlist": 2,
+		"binary":   3,
+	}
+
+	workerCount := workerCountMap[category]
+	if workerCount == 0 {
 		workerCount = 2
-	} else if category == "go" {
-		workerCount = 6
 	}
 	if workerCount < 1 {
 		workerCount = 1
@@ -181,6 +185,16 @@ func (i *Installer) CheckAll() map[string]bool {
 	if len(i.jobs) == 0 {
 		i.RegisterAll()
 	}
+
+	goPath := resolveGOPATH(i.cfg)
+	if strings.TrimSpace(goPath) != "" {
+		goBin := filepath.Join(goPath, "bin")
+		currentPath := os.Getenv("PATH")
+		if !strings.Contains(currentPath, goBin) {
+			_ = os.Setenv("PATH", goBin+string(os.PathListSeparator)+currentPath)
+		}
+	}
+
 	status := make(map[string]bool, len(i.jobs))
 	for _, job := range i.jobs {
 		installed := false

@@ -6,11 +6,11 @@ import (
 	"sort"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/installer"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/components"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type installerProgressMsg struct {
@@ -159,6 +159,8 @@ func (m InstallerModel) View() string {
 	categorySections := []string{
 		m.renderCategory("system", "SYSTEM"),
 		m.renderCategory("go", "GO TOOLS"),
+		m.renderCategory("post-go", "POST-GO"),
+		m.renderCategory("binary", "BINARIES"),
 		m.renderCategory("python", "PYTHON TOOLS"),
 		m.renderCategory("wordlist", "WORDLISTS"),
 	}
@@ -288,4 +290,3 @@ func waitInstallerProgressCmd(progress <-chan installer.ToolJob) tea.Cmd {
 		return installerProgressMsg{Job: job}
 	}
 }
-

@@ -50,7 +50,6 @@ var gitPythonTools = []GitTool{
 	{Name: "SSRFmap", Repo: "https://github.com/swisskyrepo/SSRFmap", ReqFile: "requirements.txt"},
 	{Name: "jwt_tool", Repo: "https://github.com/ticarpi/jwt_tool", ReqFile: "requirements.txt"},
 	{Name: "commix", Repo: "https://github.com/commixproject/commix", Setup: "python3 commix.py --install"},
-	{Name: "massdns", Repo: "https://github.com/blechschmidt/massdns", Build: "make"},
 	{Name: "cloud_enum", Repo: "https://github.com/initstring/cloud_enum", ReqFile: "requirements.txt"},
 	{Name: "phpggc", Repo: "https://github.com/ambionics/phpggc"},
 	{Name: "lazyegg", Repo: "https://github.com/schooldropout1337/lazyegg"},
