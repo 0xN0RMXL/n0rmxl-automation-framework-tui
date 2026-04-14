@@ -20,14 +20,8 @@ A single Go binary for terminal-native bug bounty automation across the full 10-
 
 ## 1. Header / Banner
 
-N0RMXL is a TUI-first bug bounty automation framework built for real hunting workflows, not disconnected one-off scripts. You run one binary, keep one workspace per target, and move from scope setup to final report with persistent state.
+N0RMXL Automation Framework is a TUI-first bug bounty automation framework built for real hunting workflows, not disconnected one-off scripts. You run one binary, keep one workspace per target, and move from scope setup to final report with persistent state.
 
-Core identity:
-
-- Name: N0RMXL Automation Framework TUI
-- Module: github.com/0xN0RMXL/n0rmxl-automation-framework-tui
-- Binary: n0rmxl
-- License: MIT
 - Primary platform: Linux (Ubuntu 22.04+ / Debian 12+)
 
 ## 2. What is N0RMXL? (Overview)
