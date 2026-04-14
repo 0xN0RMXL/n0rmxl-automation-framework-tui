@@ -11,6 +11,7 @@ import (
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/components"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type installerProgressMsg struct {
@@ -85,16 +86,7 @@ func (m InstallerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.updateProgress()
 		return m, tea.Batch(startInstallerCmd(m.backend), waitInstallerProgressCmd(m.backend.Progress()))
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		calcWidth := msg.Width - 28
-		if calcWidth < 20 {
-			calcWidth = 20
-		}
-		if calcWidth > 70 {
-			calcWidth = 70
-		}
-		m.progress.SetWidth(calcWidth)
+		m.SetSize(msg.Width, msg.Height)
 		return m, nil
 	case installerProgressMsg:
 		m.jobs[msg.Job.Name] = msg.Job
@@ -146,8 +138,8 @@ func (m InstallerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m InstallerModel) View() string {
-	if m.width > 0 && m.height > 0 && (m.width < 100 || m.height < 30) {
-		return theme.Panel.Render("Terminal is too small. Minimum size is 100x30.")
+	if m.width > 0 && m.height > 0 && (m.width < minTerminalWidth || m.height < minTerminalHeight) {
+		return theme.Panel.Width(screenContentWidth(m.width)).Render(responsiveSizeNotice(m.width, m.height))
 	}
 
 	installed, total := m.countInstalled()
@@ -155,20 +147,44 @@ func (m InstallerModel) View() string {
 		total = 1
 	}
 	statusLine := fmt.Sprintf("Overall Progress  %d/%d", installed, total)
+	bodyWidth := screenContentWidth(m.width)
+	nameColWidth := clampInt(bodyWidth/3, 14, 26)
+	maxRows := 10
+	if m.height < 34 {
+		maxRows = 7
+	}
+	if m.height < 28 {
+		maxRows = 5
+	}
+	if m.height < 24 {
+		maxRows = 3
+	}
 
 	categorySections := []string{
-		m.renderCategory("system", "SYSTEM"),
-		m.renderCategory("go", "GO TOOLS"),
-		m.renderCategory("post-go", "POST-GO"),
-		m.renderCategory("binary", "BINARIES"),
-		m.renderCategory("python", "PYTHON TOOLS"),
-		m.renderCategory("wordlist", "WORDLISTS"),
+		m.renderCategory("system", "SYSTEM", maxRows, nameColWidth),
+		m.renderCategory("go", "GO TOOLS", maxRows, nameColWidth),
+		m.renderCategory("post-go", "POST-GO", maxRows, nameColWidth),
+		m.renderCategory("binary", "BINARIES", maxRows, nameColWidth),
+		m.renderCategory("python", "PYTHON TOOLS", maxRows, nameColWidth),
+		m.renderCategory("wordlist", "WORDLISTS", maxRows, nameColWidth),
+	}
+
+	categoryBlock := strings.Join(categorySections, "\n\n")
+	if leftW, rightW, stacked := splitColumns(bodyWidth, 40, 40, 2); !stacked {
+		left := strings.Join(categorySections[:3], "\n\n")
+		right := strings.Join(categorySections[3:], "\n\n")
+		categoryBlock = lipgloss.JoinHorizontal(
+			lipgloss.Top,
+			lipgloss.NewStyle().Width(leftW).Render(left),
+			lipgloss.NewStyle().Width(rightW).Render(right),
+		)
 	}
 
 	logLines := strings.Join(m.logs, "\n")
 	if logLines == "" {
 		logLines = "[INFO] no installer logs yet"
 	}
+	logPanelWidth := clampInt(bodyWidth-4, 20, 220)
 
 	state := "running"
 	if m.done {
@@ -184,27 +200,27 @@ func (m InstallerModel) View() string {
 		statusLine,
 		m.progress.View(),
 		theme.Divider(),
-		strings.Join(categorySections, "\n\n"),
+		categoryBlock,
 		theme.Divider(),
 		theme.BoldText.Render("LIVE LOG"),
-		theme.Panel.Render(logLines),
+		theme.Panel.Width(logPanelWidth).Render(logLines),
 		theme.MutedText.Render("[R] Retry  [S] Skip Failed  [Q] Back"),
 	}
 	if m.errMsg != "" {
 		content = append(content, renderScreenErrorOverlay(m.errMsg))
 	}
-	return theme.Panel.Render(strings.Join(content, "\n"))
+	return theme.Panel.Width(bodyWidth).Render(strings.Join(content, "\n"))
 }
 
 func (m *InstallerModel) SetSize(width int, height int) {
 	m.width = width
 	m.height = height
-	calcWidth := width - 28
-	if calcWidth < 20 {
-		calcWidth = 20
+	calcWidth := width - 20
+	if calcWidth < 18 {
+		calcWidth = 18
 	}
-	if calcWidth > 70 {
-		calcWidth = 70
+	if calcWidth > 120 {
+		calcWidth = 120
 	}
 	m.progress.SetWidth(calcWidth)
 }
@@ -230,21 +246,26 @@ func (m InstallerModel) countInstalled() (int, int) {
 	return installed, len(m.jobs)
 }
 
-func (m InstallerModel) renderCategory(category string, title string) string {
+func (m InstallerModel) renderCategory(category string, title string, maxRows int, nameColWidth int) string {
 	rows := make([]string, 0, 16)
 	for _, name := range m.order {
 		job, ok := m.jobs[name]
 		if !ok || job.Category != category {
 			continue
 		}
-		rows = append(rows, fmt.Sprintf("%s %-20s %s", statusSymbol(job.Status), job.Name, strings.ToUpper(string(job.Status))))
+		jobName := truncateText(job.Name, nameColWidth)
+		status := strings.ToUpper(string(job.Status))
+		rows = append(rows, fmt.Sprintf("%s %-*s %s", statusSymbol(job.Status), nameColWidth, jobName, status))
 	}
 	sort.Strings(rows)
 	if len(rows) == 0 {
 		rows = append(rows, "(none)")
 	}
-	if len(rows) > 10 {
-		rows = rows[:10]
+	if maxRows < 1 {
+		maxRows = 1
+	}
+	if len(rows) > maxRows {
+		rows = rows[:maxRows]
 		rows = append(rows, "...")
 	}
 	return theme.Panel.Render(theme.BoldText.Render(title) + "\n" + strings.Join(rows, "\n"))

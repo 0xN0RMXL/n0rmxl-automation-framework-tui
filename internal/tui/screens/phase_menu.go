@@ -6,11 +6,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/components"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
+	"github.com/charmbracelet/bubbles/spinner"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type RunSelectedPhasesMsg struct {
@@ -139,12 +139,13 @@ func (m PhaseMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m PhaseMenuModel) View() string {
-	if m.width > 0 && m.height > 0 && (m.width < 100 || m.height < 30) {
-		return theme.AppFrame.Render(theme.Panel.Render("Terminal is too small. Minimum size is 100x30."))
+	if m.width > 0 && m.height > 0 && (m.width < minTerminalWidth || m.height < minTerminalHeight) {
+		return theme.Panel.Width(screenContentWidth(m.width)).Render(responsiveSizeNotice(m.width, m.height))
 	}
 
-	header := theme.RenderTitle(fmt.Sprintf("N0RMXL | Target: %s", defaultText(m.target, "n/a")), m.width-8)
+	header := theme.RenderTitle(fmt.Sprintf("N0RMXL | Target: %s", defaultText(m.target, "n/a")), screenContentWidth(m.width)-2)
 	phaseLines := make([]string, 0, len(m.phases))
+	nameWidth := clampInt(m.width-46, 18, 48)
 	for i, phase := range m.phases {
 		pointer := " "
 		if i == m.index {
@@ -159,7 +160,8 @@ func (m PhaseMenuModel) View() string {
 		if status == models.PhaseRunning {
 			statusText = m.spin.View() + " " + statusText
 		}
-		line := fmt.Sprintf("%s %s Phase %d  %-42s %s", pointer, selected, phase.number, phase.name, statusText)
+		phaseName := truncateText(phase.name, nameWidth)
+		line := fmt.Sprintf("%s %s P%-2d %-*s %s", pointer, selected, phase.number, nameWidth, phaseName, statusText)
 		if i == m.index {
 			line = theme.TableSelected.Render(line)
 		} else {
@@ -190,7 +192,7 @@ func (m PhaseMenuModel) View() string {
 		"",
 		help,
 	}, "\n")
-	return theme.AppFrame.Render(content)
+	return theme.Panel.Width(screenContentWidth(m.width)).Render(content)
 }
 
 func (m *PhaseMenuModel) SetSize(width int, height int) {
@@ -278,4 +280,3 @@ func WorkspacePathFromTarget(root string, target string) string {
 	}
 	return filepath.Join(root, target)
 }
-

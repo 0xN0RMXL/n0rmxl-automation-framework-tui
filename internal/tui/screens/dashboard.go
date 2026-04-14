@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/components"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
+	"github.com/charmbracelet/bubbles/table"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type dashboardLoadedMsg struct {
@@ -153,7 +153,7 @@ func (m DashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m DashboardModel) View() string {
-	title := theme.RenderTitle("VULNERABILITY DASHBOARD", m.width-8)
+	title := theme.RenderTitle("VULNERABILITY DASHBOARD", screenContentWidth(m.width)-2)
 	stats := m.renderStatsLine()
 	workspace := theme.RenderKeyValue("Workspace", defaultText(m.workspace, "No target selected"))
 	filter := theme.RenderKeyValue("Filter", strings.ToUpper(defaultText(m.filter, "all")))
@@ -162,7 +162,7 @@ func (m DashboardModel) View() string {
 		theme.MutedText.Render("0 all  1 critical  2 high  3 medium  4 low  r reload"),
 	}, "  ")
 
-	tablePanel := theme.Panel.Width(max(80, m.width-8)).Render(strings.Join([]string{
+	tablePanel := theme.Panel.Width(screenContentWidth(m.width) - 2).Render(strings.Join([]string{
 		theme.SectionHeader.Render("Findings"),
 		m.table.View(),
 	}, "\n"))
@@ -180,14 +180,16 @@ func (m DashboardModel) View() string {
 		body += "\n\n" + overlay
 	}
 
-	return theme.AppFrame.Render(body)
+	return theme.Panel.Width(screenContentWidth(m.width)).Render(body)
 }
 
 func (m *DashboardModel) SetSize(width int, height int) {
 	m.width = width
 	m.height = height
-	m.table.SetWidth(max(74, width-16))
-	m.table.SetHeight(max(8, height-16))
+	tableWidth := clampInt(width-10, 52, 240)
+	tableHeight := max(6, height-14)
+	m.table.SetWidth(tableWidth)
+	m.table.SetHeight(tableHeight)
 }
 
 func (m *DashboardModel) recalculate() {
@@ -268,4 +270,3 @@ func dashboardTickCmd() tea.Cmd {
 		return dashboardTickMsg(t)
 	})
 }
-

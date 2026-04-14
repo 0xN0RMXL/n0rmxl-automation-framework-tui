@@ -9,15 +9,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	cfgpkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/engine"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 	phasespkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/phases"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/components"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
+	"github.com/charmbracelet/bubbles/table"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type phaseRunnerTickMsg time.Time
@@ -361,17 +361,16 @@ func (m PhaseRunnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m PhaseRunnerModel) View() string {
 	title := theme.RenderTitle(
 		fmt.Sprintf("PHASE RUNNER | TARGET: %s", strings.ToUpper(defaultText(m.target.Domain, "N/A"))),
-		m.width-8,
+		screenContentWidth(m.width)-2,
 	)
 	statusLine := strings.Join([]string{
 		theme.RenderKeyValue("Mode", m.mode),
 		theme.RenderKeyValue("Paused", fmt.Sprintf("%t", m.paused)),
 		theme.RenderKeyValue("Elapsed", m.elapsed.Truncate(time.Second).String()),
-		theme.RenderKeyValue("Workspace", defaultText(m.workspaceDir, "not set")),
 	}, "  ")
+	workspaceLine := theme.RenderKeyValue("Workspace", defaultText(m.workspaceDir, "not set"))
 
-	leftWidth := max(40, m.width/2-5)
-	rightWidth := max(42, m.width-leftWidth-10)
+	leftWidth, rightWidth, stacked := splitColumns(screenContentWidth(m.width), 40, 44, 2)
 	left := theme.Panel.Width(leftWidth).Render(strings.Join([]string{
 		theme.SectionHeader.Render("Queued Phases"),
 		strings.Join(m.renderJobLines(), "\n"),
@@ -401,19 +400,29 @@ func (m PhaseRunnerModel) View() string {
 		m.keymap.ViewFinds,
 	)
 	body := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
-	lines := []string{title, theme.Divider(), statusLine, body, help}
+	if stacked {
+		body = strings.Join([]string{left, right}, "\n")
+	}
+	lines := []string{title, theme.Divider(), statusLine, workspaceLine, body, help}
 	if strings.TrimSpace(m.runErr) != "" {
 		lines = append(lines, theme.Badge("ERROR", theme.Danger).Render("ERROR")+" "+m.runErr)
 	}
-	return theme.AppFrame.Render(strings.Join(lines, "\n"))
+	return theme.Panel.Width(screenContentWidth(m.width)).Render(strings.Join(lines, "\n"))
 }
 
 func (m *PhaseRunnerModel) SetSize(width int, height int) {
 	m.width = width
 	m.height = height
-	m.logViewer.SetSize(max(36, width/2-10), max(10, height-16))
-	m.findings.SetWidth(max(42, width/2-10))
-	m.findings.SetHeight(max(8, height-18))
+	_, rightWidth, stacked := splitColumns(screenContentWidth(width), 40, 44, 2)
+	if stacked {
+		rightWidth = screenContentWidth(width)
+	}
+
+	contentHeight := max(8, screenContentHeight(height)-10)
+	innerWidth := clampInt(rightWidth-4, 24, 220)
+	m.logViewer.SetSize(innerWidth, contentHeight)
+	m.findings.SetWidth(innerWidth)
+	m.findings.SetHeight(max(6, contentHeight-2))
 }
 
 func (m *PhaseRunnerModel) renderJobLines() []string {
@@ -421,12 +430,14 @@ func (m *PhaseRunnerModel) renderJobLines() []string {
 		return []string{theme.MutedText.Render("No phases queued.")}
 	}
 	lines := make([]string, 0, len(m.jobs))
+	nameWidth := clampInt(m.width-58, 18, 42)
 	for i, job := range m.jobs {
 		prefix := " "
 		if i == m.index {
 			prefix = ">"
 		}
-		line := fmt.Sprintf("%s P%d %-38s %-18s %3.0f%%", prefix, job.Phase, job.Name, theme.StatusBadge(string(job.Status)), job.Progress*100)
+		status := strings.ToUpper(string(job.Status))
+		line := fmt.Sprintf("%s P%-2d %-*s %-9s %3.0f%%", prefix, job.Phase, nameWidth, truncateText(job.Name, nameWidth), status, job.Progress*100)
 		if i == m.index {
 			line = theme.TableSelected.Render(line)
 		}
@@ -800,4 +811,3 @@ func max(a int, b int) int {
 	}
 	return b
 }
-

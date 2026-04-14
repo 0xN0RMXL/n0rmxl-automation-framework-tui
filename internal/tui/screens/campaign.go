@@ -11,12 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
 	cfgpkg "github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/components"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
+	"github.com/charmbracelet/bubbles/table"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type campaignTargetSummary struct {
@@ -227,7 +227,7 @@ func (m CampaignModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m CampaignModel) View() string {
-	title := theme.RenderTitle("CAMPAIGN MANAGER", m.width-8)
+	title := theme.RenderTitle("CAMPAIGN MANAGER", screenContentWidth(m.width)-2)
 	workspace := theme.RenderKeyValue("Workspace Root", defaultText(m.workspaceRoot, "n/a"))
 	stats := theme.RenderKeyValue("Targets", fmt.Sprintf("%d", len(m.summaries))) + "  " +
 		theme.RenderKeyValue("Total Findings", fmt.Sprintf("%d", m.totalFindings())) + "  " +
@@ -257,7 +257,7 @@ func (m CampaignModel) View() string {
 		stats,
 		stateSummary,
 		runStats,
-		theme.Panel.Width(max(90, m.width-8)).Render(m.table.View()),
+		theme.Panel.Width(screenContentWidth(m.width) - 2).Render(m.table.View()),
 		help,
 	}
 	if m.lastError != "" {
@@ -271,14 +271,14 @@ func (m CampaignModel) View() string {
 		body = append(body, theme.MutedText.Render(fmt.Sprintf("campaign execution running (%s)", elapsed)))
 	}
 
-	return theme.AppFrame.Render(strings.Join(body, "\n"))
+	return theme.Panel.Width(screenContentWidth(m.width)).Render(strings.Join(body, "\n"))
 }
 
 func (m *CampaignModel) SetSize(width int, height int) {
 	m.width = width
 	m.height = height
-	m.table.SetWidth(max(86, width-14))
-	m.table.SetHeight(max(8, height-16))
+	m.table.SetWidth(clampInt(width-10, 60, 240))
+	m.table.SetHeight(max(6, height-16))
 }
 
 func (m CampaignModel) reloadCmd() tea.Cmd {
@@ -690,4 +690,3 @@ func statusRank(status models.PhaseStatus) int {
 		return 5
 	}
 }
-

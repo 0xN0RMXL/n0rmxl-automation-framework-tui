@@ -8,11 +8,11 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
-	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
 )
 
 type reportLoadedMsg struct {
@@ -103,7 +103,7 @@ func (m ReportViewerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m ReportViewerModel) View() string {
-	title := theme.RenderTitle("REPORT VIEWER", m.width-8)
+	title := theme.RenderTitle("REPORT VIEWER", screenContentWidth(m.width)-2)
 	pathLine := theme.RenderKeyValue("Path", defaultText(m.reportPath, "n/a"))
 	help := theme.MutedText.Render("m markdown  h html  p pdf  o open  c copy path  r reload")
 
@@ -118,7 +118,7 @@ func (m ReportViewerModel) View() string {
 		title,
 		theme.Divider(),
 		pathLine,
-		theme.Panel.Width(max(90, m.width-8)).Render(m.viewport.View()),
+		theme.Panel.Width(screenContentWidth(m.width) - 2).Render(m.viewport.View()),
 		help,
 	}
 	if status != "" {
@@ -127,14 +127,14 @@ func (m ReportViewerModel) View() string {
 	if overlay := renderScreenErrorOverlay(m.lastError); overlay != "" {
 		body = append(body, overlay)
 	}
-	return theme.AppFrame.Render(strings.Join(body, "\n"))
+	return theme.Panel.Width(screenContentWidth(m.width)).Render(strings.Join(body, "\n"))
 }
 
 func (m *ReportViewerModel) SetSize(width int, height int) {
 	m.width = width
 	m.height = height
-	m.viewport.Width = max(84, width-16)
-	m.viewport.Height = max(10, height-16)
+	m.viewport.Width = clampInt(width-10, 40, 240)
+	m.viewport.Height = max(8, height-12)
 	m.renderViewport()
 }
 
@@ -237,4 +237,3 @@ func copyPathCmd(path string) tea.Cmd {
 		return reportActionMsg{message: "copied path to clipboard"}
 	}
 }
-

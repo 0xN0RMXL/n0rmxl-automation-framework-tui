@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type TargetReadyMsg struct {
@@ -228,7 +228,7 @@ func (m TargetInputModel) View() string {
 		body += "\n\n" + theme.MutedText.Render("Error: "+m.lastError)
 	}
 
-	return theme.Panel.Render(strings.Join([]string{
+	return theme.Panel.Width(screenContentWidth(m.width)).Render(strings.Join([]string{
 		theme.BoldText.Render(title),
 		theme.Divider(),
 		body,
@@ -249,11 +249,11 @@ func (m *TargetInputModel) setWidths(width int) {
 	if w < 24 {
 		w = 24
 	}
-	if w > 72 {
-		w = 72
+	if w > 120 {
+		w = 120
 	}
 	m.domain.Width = w
-	m.platform.Width = 24
+	m.platform.Width = clampInt(w/2, 20, 48)
 	m.programURL.Width = w
 	m.wildcards.Width = w
 	m.explicit.Width = w
@@ -341,4 +341,3 @@ func nextProfileString(profile string) string {
 		return "slow"
 	}
 }
-

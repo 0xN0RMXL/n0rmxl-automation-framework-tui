@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type SplashAction string
@@ -154,9 +154,8 @@ func (m SplashModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m SplashModel) View() string {
-	if m.width > 0 && m.height > 0 && (m.width < 100 || m.height < 30) {
-		warn := theme.Panel.Render("Terminal is too small. Minimum size is 100x30.")
-		return theme.AppFrame.Render(warn)
+	if m.width > 0 && m.height > 0 && (m.width < minTerminalWidth || m.height < minTerminalHeight) {
+		return theme.Panel.Width(screenContentWidth(m.width)).Render(responsiveSizeNotice(m.width, m.height))
 	}
 
 	logo := m.renderAnimatedLogo()
@@ -196,7 +195,7 @@ func (m SplashModel) View() string {
 		fmt.Sprintf("Burp: %s | Vault: %s | %s", burpStatus, vaultStatus, toolStatus),
 	}, "\n")
 
-	return theme.AppFrame.Render(content)
+	return theme.Panel.Width(screenContentWidth(m.width)).Render(content)
 }
 
 func (m *SplashModel) SetSize(width int, height int) {
@@ -275,4 +274,3 @@ func (m SplashModel) renderAnimatedLogo() string {
 	}
 	return lipgloss.NewStyle().Foreground(theme.Accent).Bold(true).Render(strings.Join(lines[:visible], "\n"))
 }
-

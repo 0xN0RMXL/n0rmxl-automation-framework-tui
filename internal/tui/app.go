@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/models"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/screens"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type Screen int
@@ -87,16 +87,17 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.splash.SetSize(msg.Width, msg.Height)
-		m.newTarget.SetSize(msg.Width, msg.Height)
-		m.phaseMenu.SetSize(msg.Width, msg.Height)
-		m.phaseRunner.SetSize(msg.Width, msg.Height)
-		m.campaign.SetSize(msg.Width, msg.Height)
-		m.dashboard.SetSize(msg.Width, msg.Height)
-		m.settings.SetSize(msg.Width, msg.Height)
-		m.installer.SetSize(msg.Width, msg.Height)
-		m.wizard.SetSize(msg.Width, msg.Height)
-		m.report.SetSize(msg.Width, msg.Height)
+		childWidth, childHeight := m.childAreaSize()
+		m.splash.SetSize(childWidth, childHeight)
+		m.newTarget.SetSize(childWidth, childHeight)
+		m.phaseMenu.SetSize(childWidth, childHeight)
+		m.phaseRunner.SetSize(childWidth, childHeight)
+		m.campaign.SetSize(childWidth, childHeight)
+		m.dashboard.SetSize(childWidth, childHeight)
+		m.settings.SetSize(childWidth, childHeight)
+		m.installer.SetSize(childWidth, childHeight)
+		m.wizard.SetSize(childWidth, childHeight)
+		m.report.SetSize(childWidth, childHeight)
 		return m, nil
 	case NavigateTo:
 		m.screen = msg.Screen
@@ -263,9 +264,25 @@ func (m AppModel) View() string {
 	if m.width > 0 && m.height > 0 {
 		header := theme.BoldText.Render("N0RMXL Automation Framework TUI")
 		footer := theme.MutedText.Render(fmt.Sprintf("Screen: %s", screenName(m.screen)))
-		return theme.AppFrame.Width(m.width - 2).Render(header + "\n" + body + "\n" + footer)
+		frameWidth := m.width - 2
+		if frameWidth < 1 {
+			frameWidth = 1
+		}
+		return theme.AppFrame.Width(frameWidth).Render(header + "\n" + body + "\n" + footer)
 	}
 	return body
+}
+
+func (m AppModel) childAreaSize() (int, int) {
+	width := m.width - 6
+	height := m.height - 6
+	if width < 24 {
+		width = 24
+	}
+	if height < 8 {
+		height = 8
+	}
+	return width, height
 }
 
 func screenName(screen Screen) string {
@@ -303,4 +320,3 @@ func containsPhase(phases []int, target int) bool {
 	}
 	return false
 }
-

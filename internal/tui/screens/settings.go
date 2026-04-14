@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type settingsTab int
@@ -308,7 +308,7 @@ func (m SettingsModel) View() string {
 		content += "\n\n" + renderScreenErrorOverlay(m.lastError)
 	}
 
-	return theme.Panel.Render(strings.Join([]string{
+	return theme.Panel.Width(screenContentWidth(m.width)).Render(strings.Join([]string{
 		theme.BoldText.Render("SETTINGS"),
 		strings.Join(tabs, "  "),
 		theme.Divider(),
@@ -415,14 +415,14 @@ func (m *SettingsModel) setInputWidths(width int) {
 	if calc < 24 {
 		calc = 24
 	}
-	if calc > 72 {
-		calc = 72
+	if calc > 120 {
+		calc = 120
 	}
 	m.burpURLInput.Width = calc
-	m.burpHostInput.Width = 24
+	m.burpHostInput.Width = clampInt(calc/2, 20, 48)
 	m.burpPortInput.Width = 10
 	m.passwordInput.Width = calc
-	m.keyNameInput.Width = 24
+	m.keyNameInput.Width = clampInt(calc/2, 20, 48)
 	m.keyValueInput.Width = calc
 }
 
@@ -541,4 +541,3 @@ func testBurpConnectionCmd(apiURL string) tea.Cmd {
 		return burpTestResultMsg{online: false, message: fmt.Sprintf("status %d", resp.StatusCode)}
 	}
 }
-
