@@ -23,7 +23,7 @@ func buildAPIDiscoveryJobs(ctx phase4Context, mergeURLsID string) apiDiscoveryOu
 	ffufDirsSummary := filepath.Join(ctx.ws.ScansFuzz, "dirs", "ffuf_dirs_summary.txt")
 	ffufVhostsSummary := filepath.Join(ctx.ws.ScansFuzz, "vhosts", "ffuf_vhosts_summary.txt")
 
-	kiterunner := engine.NewJob(4, "kiterunner", "kr", nil)
+	kiterunner := engine.NewJob(4, "kiterunner", "", nil)
 	kiterunner.ID = "phase4-kiterunner"
 	kiterunner.Description = "Bruteforce API route paths on live hosts"
 	kiterunner.OutputFile = kiterunnerOut
@@ -38,7 +38,12 @@ func buildAPIDiscoveryJobs(ctx phase4Context, mergeURLsID string) apiDiscoveryOu
 			return nil
 		}
 		args := []string{"scan", ctx.liveHosts, "-w", ctx.apiRoutesWordlist, "-o", j.OutputFile, "-j", "-x", fmt.Sprintf("%d", maxInt(10, ctx.threads))}
-		return runCommand(execCtx, ctx.runCfg, "kr", args)
+		for _, bin := range []string{"kr", "kiterunner"} {
+			if err := runCommand(execCtx, ctx.runCfg, bin, args); err == nil {
+				return nil
+			}
+		}
+		return fmt.Errorf("kiterunner execution failed via kr and kiterunner fallbacks")
 	}
 	kiterunner.ParseOutput = func(j *engine.Job) int { return countFileLines(j.OutputFile) }
 	jobs = append(jobs, kiterunner)
@@ -80,7 +85,7 @@ func buildAPIDiscoveryJobs(ctx phase4Context, mergeURLsID string) apiDiscoveryOu
 	}
 	jobs = append(jobs, arjun)
 
-	graphql := engine.NewJob(4, "graphql", "graphw00f", nil)
+	graphql := engine.NewJob(4, "graphql", "", nil)
 	graphql.ID = "phase4-graphql-detect"
 	graphql.Description = "Detect GraphQL services on in-scope hosts"
 	graphql.OutputFile = graphqlOut
@@ -90,8 +95,30 @@ func buildAPIDiscoveryJobs(ctx phase4Context, mergeURLsID string) apiDiscoveryOu
 			markSkipped(j, "live hosts file missing")
 			return nil
 		}
-		if err := runCommand(execCtx, ctx.runCfg, "graphw00f", []string{"-f", ctx.liveHosts, "-o", j.OutputFile}); err != nil {
-			return err
+		args := []string{"-f", ctx.liveHosts, "-o", j.OutputFile}
+		if err := runCommand(execCtx, ctx.runCfg, "graphw00f", args); err != nil {
+			pythonBin := selectPythonBinary()
+			if moduleErr := runCommand(execCtx, ctx.runCfg, pythonBin, append([]string{"-m", "graphw00f"}, args...)); moduleErr == nil {
+				// noop
+			} else {
+				scriptCandidates := []string{
+					expandHome("~/.local/share/n0rmxl/tools/graphw00f/main.py"),
+					expandHome("~/.local/share/n0rmxl/tools/graphw00f/graphw00f.py"),
+				}
+				runOK := false
+				for _, script := range scriptCandidates {
+					if !fileExists(script) {
+						continue
+					}
+					if scriptErr := runCommand(execCtx, ctx.runCfg, pythonBin, append([]string{script}, args...)); scriptErr == nil {
+						runOK = true
+						break
+					}
+				}
+				if !runOK {
+					return fmt.Errorf("graphw00f execution failed via binary/module/script fallbacks")
+				}
+			}
 		}
 		endpoints := make([]string, 0, 64)
 		for _, row := range readNonEmptyLines(j.OutputFile) {
@@ -262,4 +289,3 @@ func buildAPIDiscoveryJobs(ctx phase4Context, mergeURLsID string) apiDiscoveryOu
 
 	return apiDiscoveryOutput{Jobs: jobs, ArjunOutput: arjunOut}
 }
-

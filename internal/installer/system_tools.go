@@ -2,8 +2,10 @@ package installer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -180,33 +182,43 @@ func RegisterSystemTools(i *Installer) {
 		Required:    false,
 		CheckFunc: func() bool {
 			_, err := exec.LookPath("rustscan")
+			if err == nil {
+				return true
+			}
+			home, homeErr := os.UserHomeDir()
+			if homeErr != nil {
+				return false
+			}
+			_, err = os.Stat(filepath.Join(home, ".cargo", "bin", "rustscan"))
 			return err == nil
 		},
 		InstallFunc: func(ctx context.Context, job *ToolJob) error {
-			archOut, err := exec.CommandContext(ctx, "uname", "-m").Output()
+			arch, err := detectMachineArch(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to detect arch: %w", err)
-			}
-			arch := strings.TrimSpace(string(archOut))
-			url := "https://github.com/RustScan/RustScan/releases/latest/download/rustscan_linux_amd64.deb"
-			if strings.HasPrefix(arch, "aarch64") || strings.HasPrefix(arch, "arm64") {
-				url = "https://github.com/RustScan/RustScan/releases/latest/download/rustscan_linux_arm64.deb"
+				return err
 			}
 
+			issues := make([]string, 0, 3)
 			debPath := filepath.Join(os.TempDir(), "rustscan.deb")
-			if err := downloadFile(ctx, url, debPath); err != nil {
-				return fmt.Errorf("rustscan download failed: %w", err)
-			}
 			defer os.Remove(debPath)
 
-			cmd := exec.CommandContext(ctx, "sudo", "dpkg", "-i", debPath)
-			if out, err := cmd.CombinedOutput(); err != nil {
-				cmd2 := exec.CommandContext(ctx, "dpkg", "-i", debPath)
-				if out2, err2 := cmd2.CombinedOutput(); err2 != nil {
-					return fmt.Errorf("rustscan install failed: %w\n%s\n%s", err2, strings.TrimSpace(string(out)), strings.TrimSpace(string(out2)))
+			if _, err := downloadFirstAvailable(ctx, rustscanDebCandidates(arch), debPath); err == nil {
+				if installErr := installDebPackage(ctx, debPath); installErr == nil {
+					return nil
+				} else {
+					issues = append(issues, "deb install failed: "+installErr.Error())
 				}
+			} else {
+				issues = append(issues, "deb download failed: "+err.Error())
 			}
-			return nil
+
+			if err := installRustscanWithCargo(ctx); err == nil {
+				return nil
+			} else {
+				issues = append(issues, "cargo fallback failed: "+err.Error())
+			}
+
+			return fmt.Errorf("rustscan install failed after fallbacks: %s", strings.Join(issues, " | "))
 		},
 	})
 
@@ -281,32 +293,67 @@ func RegisterSystemTools(i *Installer) {
 		Required:    false,
 		CheckFunc: func() bool {
 			_, err := exec.LookPath("nrich")
+			if err == nil {
+				return true
+			}
+			home, homeErr := os.UserHomeDir()
+			if homeErr != nil {
+				return false
+			}
+			_, err = os.Stat(filepath.Join(home, ".local", "bin", "nrich"))
 			return err == nil
 		},
 		InstallFunc: func(ctx context.Context, job *ToolJob) error {
-			archOut, err := exec.CommandContext(ctx, "uname", "-m").Output()
+			arch, err := detectMachineArch(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to detect arch: %w", err)
-			}
-			arch := strings.TrimSpace(string(archOut))
-
-			url := "https://gitlab.com/shodan-public/nrich/-/releases/permalink/latest/downloads/nrich_latest_amd64.deb"
-			if strings.Contains(arch, "aarch64") || strings.Contains(arch, "arm64") {
-				url = "https://gitlab.com/shodan-public/nrich/-/releases/permalink/latest/downloads/nrich_latest_arm64.deb"
+				return err
 			}
 
-			debPath := filepath.Join(os.TempDir(), "nrich.deb")
-			if err := downloadFile(ctx, url, debPath); err != nil {
+			issues := make([]string, 0, 3)
+			assetURL, assetKind, resolveErr := resolveLatestNrichAsset(ctx, arch)
+			if resolveErr != nil {
+				issues = append(issues, "api asset lookup failed: "+resolveErr.Error())
+				for _, legacy := range legacyNrichDebCandidates(arch) {
+					assetURL = legacy
+					assetKind = "deb"
+					tmpDeb := filepath.Join(os.TempDir(), "nrich.deb")
+					if err := downloadFile(ctx, assetURL, tmpDeb); err != nil {
+						issues = append(issues, fmt.Sprintf("legacy download failed (%s): %s", assetURL, err.Error()))
+						continue
+					}
+					if installErr := installDebPackage(ctx, tmpDeb); installErr == nil {
+						_ = os.Remove(tmpDeb)
+						return nil
+					} else {
+						issues = append(issues, fmt.Sprintf("legacy deb install failed (%s): %s", assetURL, installErr.Error()))
+					}
+					_ = os.Remove(tmpDeb)
+				}
+				return fmt.Errorf("nrich install failed after fallbacks: %s", strings.Join(issues, " | "))
+			}
+
+			tmpPath := filepath.Join(os.TempDir(), "nrich.tmp")
+			if assetKind == "deb" {
+				tmpPath = filepath.Join(os.TempDir(), "nrich.deb")
+			}
+			defer os.Remove(tmpPath)
+
+			if err := downloadFile(ctx, assetURL, tmpPath); err != nil {
 				return fmt.Errorf("nrich download failed: %w", err)
 			}
-			defer os.Remove(debPath)
 
-			cmd := exec.CommandContext(ctx, "sudo", "dpkg", "-i", debPath)
-			if out, err := cmd.CombinedOutput(); err != nil {
-				cmd2 := exec.CommandContext(ctx, "dpkg", "-i", debPath)
-				if out2, err2 := cmd2.CombinedOutput(); err2 != nil {
-					return fmt.Errorf("nrich install failed: %w\n%s\n%s", err2, strings.TrimSpace(string(out)), strings.TrimSpace(string(out2)))
+			if assetKind == "deb" {
+				if err := installDebPackage(ctx, tmpPath); err != nil {
+					return fmt.Errorf("nrich deb install failed: %w", err)
 				}
+				return nil
+			}
+
+			if err := installBinary(ctx, tmpPath, "/usr/local/bin/nrich"); err != nil {
+				return err
+			}
+			if err := ensureExecutable(ctx, "/usr/local/bin/nrich"); err != nil {
+				return err
 			}
 			return nil
 		},
@@ -443,6 +490,212 @@ func gitCloneShallow(ctx context.Context, repoURL, dest string, withSudo bool) e
 	out2, err2 := clone2.CombinedOutput()
 	if err2 != nil {
 		return fmt.Errorf("git clone failed for %s: %w\n%s\n%s", repoURL, err2, strings.TrimSpace(string(out)), strings.TrimSpace(string(out2)))
+	}
+	return nil
+}
+
+func detectMachineArch(ctx context.Context) (string, error) {
+	out, err := exec.CommandContext(ctx, "uname", "-m").Output()
+	if err == nil {
+		arch := strings.ToLower(strings.TrimSpace(string(out)))
+		if arch != "" {
+			return arch, nil
+		}
+	}
+	if strings.TrimSpace(runtime.GOARCH) == "" {
+		return "", fmt.Errorf("failed to detect architecture")
+	}
+	return strings.ToLower(strings.TrimSpace(runtime.GOARCH)), nil
+}
+
+func isArmArch(arch string) bool {
+	arch = strings.ToLower(strings.TrimSpace(arch))
+	return strings.Contains(arch, "arm64") || strings.Contains(arch, "aarch64")
+}
+
+func rustscanDebCandidates(arch string) []string {
+	if isArmArch(arch) {
+		return []string{
+			"https://github.com/RustScan/RustScan/releases/latest/download/rustscan_linux_arm64.deb",
+			"https://github.com/RustScan/RustScan/releases/latest/download/rustscan_arm64.deb",
+		}
+	}
+
+	return []string{
+		"https://github.com/RustScan/RustScan/releases/latest/download/rustscan_linux_amd64.deb",
+		"https://github.com/RustScan/RustScan/releases/latest/download/rustscan_amd64.deb",
+		"https://github.com/RustScan/RustScan/releases/latest/download/rustscan_x86_64.deb",
+	}
+}
+
+func downloadFirstAvailable(ctx context.Context, urls []string, dest string) (string, error) {
+	attempts := make([]string, 0, len(urls))
+	for _, candidate := range urls {
+		url := strings.TrimSpace(candidate)
+		if url == "" {
+			continue
+		}
+		if err := downloadFile(ctx, url, dest); err == nil {
+			return url, nil
+		} else {
+			attempts = append(attempts, fmt.Sprintf("%s => %s", url, err.Error()))
+		}
+	}
+	if len(attempts) == 0 {
+		return "", fmt.Errorf("no candidate URLs provided")
+	}
+	return "", fmt.Errorf("all download attempts failed: %s", strings.Join(attempts, " | "))
+}
+
+func installDebPackage(ctx context.Context, debPath string) error {
+	cmd := exec.CommandContext(ctx, "sudo", "dpkg", "-i", debPath)
+	out, err := cmd.CombinedOutput()
+	if err == nil {
+		return nil
+	}
+
+	cmd2 := exec.CommandContext(ctx, "dpkg", "-i", debPath)
+	out2, err2 := cmd2.CombinedOutput()
+	if err2 != nil {
+		return fmt.Errorf("dpkg install failed: %w\n%s\n%s", err2, strings.TrimSpace(string(out)), strings.TrimSpace(string(out2)))
+	}
+	return nil
+}
+
+func installRustscanWithCargo(ctx context.Context) error {
+	if _, err := exec.LookPath("cargo"); err != nil {
+		if installErr := aptInstall(ctx, "cargo"); installErr != nil {
+			return fmt.Errorf("cargo not found and apt install failed: %w", installErr)
+		}
+	}
+
+	cmd := exec.CommandContext(ctx, "cargo", "install", "--locked", "rustscan")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("cargo install rustscan failed: %w\n%s", err, strings.TrimSpace(string(out)))
+	}
+
+	home, homeErr := os.UserHomeDir()
+	if homeErr != nil {
+		return nil
+	}
+
+	src := filepath.Join(home, ".cargo", "bin", "rustscan")
+	if _, err := os.Stat(src); err != nil {
+		return nil
+	}
+
+	if err := installBinary(ctx, src, "/usr/local/bin/rustscan"); err == nil {
+		return ensureExecutable(ctx, "/usr/local/bin/rustscan")
+	}
+
+	localBinDir := filepath.Join(home, ".local", "bin")
+	if err := os.MkdirAll(localBinDir, 0o755); err != nil {
+		return nil
+	}
+	dest := filepath.Join(localBinDir, "rustscan")
+	if err := copyFile(src, dest); err != nil {
+		return nil
+	}
+	return ensureExecutable(ctx, dest)
+}
+
+type gitlabReleaseAsset struct {
+	Name           string `json:"name"`
+	URL            string `json:"url"`
+	DirectAssetURL string `json:"direct_asset_url"`
+}
+
+type gitlabReleasePayload struct {
+	Assets struct {
+		Links []gitlabReleaseAsset `json:"links"`
+	} `json:"assets"`
+}
+
+func resolveLatestNrichAsset(ctx context.Context, arch string) (string, string, error) {
+	const releaseAPI = "https://gitlab.com/api/v4/projects/shodan-public%2Fnrich/releases/permalink/latest"
+
+	var payload gitlabReleasePayload
+	if err := fetchJSON(ctx, releaseAPI, &payload); err != nil {
+		return "", "", err
+	}
+
+	preferArm := isArmArch(arch)
+	for _, kind := range []string{"deb", "bin"} {
+		for _, asset := range payload.Assets.Links {
+			name := strings.ToLower(strings.TrimSpace(asset.Name))
+			if name == "" {
+				continue
+			}
+
+			url := strings.TrimSpace(asset.DirectAssetURL)
+			if url == "" {
+				url = strings.TrimSpace(asset.URL)
+			}
+			if url == "" {
+				continue
+			}
+
+			if preferArm {
+				if !(strings.Contains(name, "arm64") || strings.Contains(name, "aarch64")) {
+					continue
+				}
+			} else {
+				if !(strings.Contains(name, "x86_64") || strings.Contains(name, "amd64")) {
+					continue
+				}
+			}
+
+			switch kind {
+			case "deb":
+				if strings.HasSuffix(name, ".deb") {
+					return url, "deb", nil
+				}
+			case "bin":
+				if strings.Contains(name, "linux") && !strings.HasSuffix(name, ".deb") && !strings.HasSuffix(name, ".rpm") {
+					return url, "binary", nil
+				}
+			}
+		}
+	}
+
+	return "", "", fmt.Errorf("no matching nrich asset found for arch %s", arch)
+}
+
+func legacyNrichDebCandidates(arch string) []string {
+	if isArmArch(arch) {
+		return []string{
+			"https://gitlab.com/shodan-public/nrich/-/releases/permalink/latest/downloads/nrich_latest_arm64.deb",
+			"https://gitlab.com/shodan-public/nrich/-/releases/permalink/latest/downloads/nrich_arm64.deb",
+		}
+	}
+	return []string{
+		"https://gitlab.com/shodan-public/nrich/-/releases/permalink/latest/downloads/nrich_latest_amd64.deb",
+		"https://gitlab.com/shodan-public/nrich/-/releases/permalink/latest/downloads/nrich_amd64.deb",
+		"https://gitlab.com/shodan-public/nrich/-/releases/permalink/latest/downloads/nrich_latest_x86_64.deb",
+	}
+}
+
+func fetchJSON(ctx context.Context, url string, target any) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", "n0rmxl-installer/1.0")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
+		return err
 	}
 	return nil
 }

@@ -19,7 +19,7 @@ func buildParamDiscoveryJobs(ctx phase4Context, mergeURLsID string, arjunOutput 
 	paramspiderOut := filepath.Join(ctx.ws.ReconParams, "paramspider.txt")
 	x8Out := filepath.Join(ctx.ws.ReconParams, "x8_results.txt")
 
-	paramspider := engine.NewJob(4, "paramspider", "paramspider", nil)
+	paramspider := engine.NewJob(4, "paramspider", "", nil)
 	paramspider.ID = "phase4-paramspider"
 	paramspider.Description = "Collect historical parameterized URLs for target"
 	paramspider.OutputFile = paramspiderOut
@@ -29,7 +29,30 @@ func buildParamDiscoveryJobs(ctx phase4Context, mergeURLsID string, arjunOutput 
 			markSkipped(j, "target domain missing")
 			return nil
 		}
-		return runCommand(execCtx, ctx.runCfg, "paramspider", []string{"-d", ctx.rootDomain, "-o", j.OutputFile})
+		args := []string{"-d", ctx.rootDomain, "-o", j.OutputFile}
+		if err := runCommand(execCtx, ctx.runCfg, "paramspider", args); err == nil {
+			return nil
+		}
+
+		pythonBin := selectPythonBinary()
+		if err := runCommand(execCtx, ctx.runCfg, pythonBin, append([]string{"-m", "paramspider"}, args...)); err == nil {
+			return nil
+		}
+
+		scriptCandidates := []string{
+			expandHome("~/.local/share/n0rmxl/tools/paramspider/paramspider.py"),
+			expandHome("~/.local/share/n0rmxl/tools/ParamSpider/paramspider.py"),
+		}
+		for _, script := range scriptCandidates {
+			if !fileExists(script) {
+				continue
+			}
+			if err := runCommand(execCtx, ctx.runCfg, pythonBin, append([]string{script}, args...)); err == nil {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("paramspider execution failed via binary/module/script fallbacks")
 	}
 	paramspider.ParseOutput = func(j *engine.Job) int { return countFileLines(j.OutputFile) }
 	jobs = append(jobs, paramspider)
@@ -240,4 +263,3 @@ func parseArjunOutput(path string) ([]string, []string) {
 	names = dedupSorted(names)
 	return urls, names
 }
-
