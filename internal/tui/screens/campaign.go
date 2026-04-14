@@ -179,6 +179,8 @@ func (m CampaignModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.reloadCmd()
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "q", "Q", "esc":
+			return m, func() tea.Msg { return BackToSplashMsg{} }
 		case "r", "R":
 			return m, m.reloadCmd()
 		case "x", "X":
@@ -248,6 +250,7 @@ func (m CampaignModel) View() string {
 		m.globalKeys.Select,
 		m.globalKeys.ScrollUp,
 		m.globalKeys.ScrollDown,
+		m.globalKeys.Back,
 	) + "  " + theme.MutedText.Render("r reload • a run-all • u resume • x clear-state")
 
 	body := []string{

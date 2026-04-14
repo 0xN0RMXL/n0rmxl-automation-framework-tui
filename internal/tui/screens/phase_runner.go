@@ -220,6 +220,18 @@ func (m PhaseRunnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.SetSize(msg.Width, msg.Height)
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "q", "Q", "esc":
+			if !m.runDone && !m.stopped {
+				m.stopped = true
+				m.paused = false
+				m.progress.SetLabel("stopping execution")
+				if m.control != nil {
+					m.control.stop()
+				}
+				m.logViewer.AppendLine("WARN", "Stop requested. Press q or esc again to leave this screen.")
+				return m, nil
+			}
+			return m, func() tea.Msg { return BackToPhaseMenuMsg{} }
 		case "up", "k":
 			if m.index > 0 {
 				m.index--
@@ -244,7 +256,7 @@ func (m PhaseRunnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.logViewer.AppendLine("RUN", "Execution resumed")
 			}
-		case "s", "ctrl+c":
+		case "s":
 			if !m.runDone {
 				m.stopped = true
 				m.progress.SetLabel("execution stopped")
@@ -398,7 +410,7 @@ func (m PhaseRunnerModel) View() string {
 		m.keymap.Stop,
 		m.keymap.ViewLog,
 		m.keymap.ViewFinds,
-	)
+	) + "  " + theme.MutedText.Render("q/esc back")
 	body := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
 	if stacked {
 		body = strings.Join([]string{left, right}, "\n")

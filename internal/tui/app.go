@@ -87,26 +87,35 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		childWidth, childHeight := m.childAreaSize()
-		m.splash.SetSize(childWidth, childHeight)
-		m.newTarget.SetSize(childWidth, childHeight)
-		m.phaseMenu.SetSize(childWidth, childHeight)
-		m.phaseRunner.SetSize(childWidth, childHeight)
-		m.campaign.SetSize(childWidth, childHeight)
-		m.dashboard.SetSize(childWidth, childHeight)
-		m.settings.SetSize(childWidth, childHeight)
-		m.installer.SetSize(childWidth, childHeight)
-		m.wizard.SetSize(childWidth, childHeight)
-		m.report.SetSize(childWidth, childHeight)
+		m.applyChildSizes()
 		return m, nil
+	case tea.KeyMsg:
+		if msg.String() == "ctrl+c" {
+			return m, tea.Quit
+		}
 	case NavigateTo:
 		m.screen = msg.Screen
+		m.applyChildSizes()
 		if msg.Screen == ScreenCampaign {
 			return m, m.campaign.Init()
 		}
 		if msg.Screen == ScreenInstaller {
 			return m, m.installer.Init()
 		}
+		return m, nil
+	case screens.BackToSplashMsg:
+		m.screen = ScreenSplash
+		m.applyChildSizes()
+		return m, nil
+	case screens.BackToPhaseMenuMsg:
+		if m.target != nil {
+			m.phaseMenu = screens.NewPhaseMenuModel(m.target.Domain, m.target.WorkspaceDir)
+			m.screen = ScreenPhaseMenu
+			m.applyChildSizes()
+			return m, m.phaseMenu.Init()
+		}
+		m.screen = ScreenSplash
+		m.applyChildSizes()
 		return m, nil
 	case LoadTarget:
 		target := msg.Target
@@ -116,7 +125,8 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.report.SetWorkspace(target.WorkspaceDir)
 		m.wizard.SetTarget(target)
 		m.screen = ScreenPhaseMenu
-		return m, nil
+		m.applyChildSizes()
+		return m, m.phaseMenu.Init()
 	case screens.TargetReadyMsg:
 		target := msg.Target
 		m.target = &target
@@ -125,7 +135,8 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.report.SetWorkspace(target.WorkspaceDir)
 		m.wizard.SetTarget(target)
 		m.screen = ScreenPhaseMenu
-		return m, nil
+		m.applyChildSizes()
+		return m, m.phaseMenu.Init()
 	case screens.RunSelectedPhasesMsg:
 		target := models.Target{}
 		if m.target != nil {
@@ -134,6 +145,7 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.phaseRunner = screens.NewPhaseRunnerModel()
 		m.phaseRunner.Configure(target, msg.Phases)
 		m.screen = ScreenPhaseRunner
+		m.applyChildSizes()
 		return m, m.phaseRunner.Init()
 	case screens.RunAllPhasesMsg:
 		target := models.Target{}
@@ -143,12 +155,14 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.phaseRunner = screens.NewPhaseRunnerModel()
 		m.phaseRunner.Configure(target, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
 		m.screen = ScreenPhaseRunner
+		m.applyChildSizes()
 		return m, m.phaseRunner.Init()
 	case screens.NavigateDashboardMsg:
 		if m.target != nil {
 			m.dashboard.SetWorkspace(m.target.WorkspaceDir)
 		}
 		m.screen = ScreenDashboard
+		m.applyChildSizes()
 		return m, m.dashboard.ReloadCmd()
 	case screens.PhaseRunCompletedMsg:
 		if strings.TrimSpace(msg.Target.WorkspaceDir) != "" {
@@ -157,33 +171,42 @@ func (m AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if containsPhase(msg.Phases, 9) {
 			m.screen = ScreenReportViewer
+			m.applyChildSizes()
 			return m, m.report.ReloadCmd()
 		}
 		if containsPhase(msg.Phases, 5) {
 			m.screen = ScreenExploitWizard
+			m.applyChildSizes()
 			return m, m.wizard.ReloadCmd()
 		}
 		m.screen = ScreenPhaseMenu
-		return m, nil
+		m.applyChildSizes()
+		return m, m.phaseMenu.Init()
 	case screens.SplashNavigateMsg:
 		switch msg.Action {
 		case screens.ActionNewTarget:
 			m.screen = ScreenNewTarget
+			m.applyChildSizes()
 		case screens.ActionCampaign:
 			m.screen = ScreenCampaign
+			m.applyChildSizes()
 			return m, m.campaign.Init()
 		case screens.ActionInstaller:
 			m.screen = ScreenInstaller
+			m.applyChildSizes()
 			return m, m.installer.Init()
 		case screens.ActionSettings, screens.ActionVault:
 			m.screen = ScreenSettings
+			m.applyChildSizes()
 		case screens.ActionDashboard:
 			if m.target != nil {
 				m.dashboard.SetWorkspace(m.target.WorkspaceDir)
 			}
 			m.screen = ScreenDashboard
+			m.applyChildSizes()
 		default:
 			m.screen = ScreenSplash
+			m.applyChildSizes()
 		}
 		return m, nil
 	}
@@ -283,6 +306,20 @@ func (m AppModel) childAreaSize() (int, int) {
 		height = 8
 	}
 	return width, height
+}
+
+func (m *AppModel) applyChildSizes() {
+	childWidth, childHeight := m.childAreaSize()
+	m.splash.SetSize(childWidth, childHeight)
+	m.newTarget.SetSize(childWidth, childHeight)
+	m.phaseMenu.SetSize(childWidth, childHeight)
+	m.phaseRunner.SetSize(childWidth, childHeight)
+	m.campaign.SetSize(childWidth, childHeight)
+	m.dashboard.SetSize(childWidth, childHeight)
+	m.settings.SetSize(childWidth, childHeight)
+	m.installer.SetSize(childWidth, childHeight)
+	m.wizard.SetSize(childWidth, childHeight)
+	m.report.SetSize(childWidth, childHeight)
 }
 
 func screenName(screen Screen) string {

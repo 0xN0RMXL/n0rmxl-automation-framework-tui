@@ -1,6 +1,10 @@
 package screens
 
-import "testing"
+import (
+	"testing"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 func TestInstallerStartCmdEmitsStartMessage(t *testing.T) {
 	cmd := installerStartCmd()
@@ -36,5 +40,31 @@ func TestInstallerUpdateStartMessageSetsRunningState(t *testing.T) {
 	}
 	if cmd == nil {
 		t.Fatal("expected start update to return execution command batch")
+	}
+}
+
+func TestInstallerBackKeyCancelsAndNavigates(t *testing.T) {
+	m := NewInstallerModel()
+	m.running = true
+	canceled := false
+	m.cancelRun = func() { canceled = true }
+
+	updated, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	next := updated.(InstallerModel)
+
+	if !canceled {
+		t.Fatal("expected running installer to be canceled on q")
+	}
+	if next.running {
+		t.Fatal("expected running state to be cleared on q")
+	}
+	if !next.done {
+		t.Fatal("expected installer model to be marked done on q")
+	}
+	if cmd == nil {
+		t.Fatal("expected back navigation command")
+	}
+	if _, ok := cmd().(BackToSplashMsg); !ok {
+		t.Fatal("expected back command to emit BackToSplashMsg")
 	}
 }

@@ -2,6 +2,7 @@ package screens
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -25,17 +26,18 @@ type installerDoneMsg struct {
 }
 
 type InstallerModel struct {
-	width    int
-	height   int
-	cfg      *config.Config
-	backend  *installer.Installer
-	jobs     map[string]installer.ToolJob
-	order    []string
-	logs     []string
-	progress components.ProgressModel
-	running  bool
-	done     bool
-	errMsg   string
+	width     int
+	height    int
+	cfg       *config.Config
+	backend   *installer.Installer
+	jobs      map[string]installer.ToolJob
+	order     []string
+	logs      []string
+	progress  components.ProgressModel
+	running   bool
+	done      bool
+	errMsg    string
+	cancelRun context.CancelFunc
 }
 
 func NewInstallerModel() InstallerModel {
@@ -79,12 +81,14 @@ func (m InstallerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.backend == nil || m.running {
 			return m, nil
 		}
+		runCtx, cancel := context.WithCancel(context.Background())
+		m.cancelRun = cancel
 		m.running = true
 		m.done = false
 		m.errMsg = ""
 		m.logs = append(m.logs, "[RUN] installer run started")
 		m.updateProgress()
-		return m, tea.Batch(startInstallerCmd(m.backend), waitInstallerProgressCmd(m.backend.Progress()))
+		return m, tea.Batch(startInstallerCmd(runCtx, m.backend), waitInstallerProgressCmd(m.backend.Progress()))
 	case tea.WindowSizeMsg:
 		m.SetSize(msg.Width, msg.Height)
 		return m, nil
@@ -102,7 +106,11 @@ func (m InstallerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case installerDoneMsg:
 		m.running = false
 		m.done = true
-		if msg.Err != nil {
+		m.cancelRun = nil
+		if errors.Is(msg.Err, context.Canceled) {
+			m.errMsg = ""
+			m.logs = append(m.logs, "[WARN] installer run canceled")
+		} else if msg.Err != nil {
 			m.errMsg = msg.Err.Error()
 			m.logs = append(m.logs, "[ERROR] installer finished with errors")
 		} else {
@@ -113,6 +121,16 @@ func (m InstallerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "q", "Q", "esc":
+			if m.running && m.cancelRun != nil {
+				m.cancelRun()
+				m.logs = append(m.logs, "[WARN] cancel requested; returning to splash")
+			}
+			m.running = false
+			m.done = true
+			m.cancelRun = nil
+			m.updateProgress()
+			return m, func() tea.Msg { return BackToSplashMsg{} }
 		case "r", "R":
 			if !m.running {
 				m.logs = append(m.logs, "[RUN] retrying installer run")
@@ -142,11 +160,14 @@ func (m InstallerModel) View() string {
 		return theme.Panel.Width(screenContentWidth(m.width)).Render(responsiveSizeNotice(m.width, m.height))
 	}
 
-	installed, total := m.countInstalled()
+	completed, total, active := m.countJobStates()
 	if total == 0 {
 		total = 1
 	}
-	statusLine := fmt.Sprintf("Overall Progress  %d/%d", installed, total)
+	statusLine := fmt.Sprintf("Overall Progress  %d/%d", completed, total)
+	if active > 0 {
+		statusLine += fmt.Sprintf("  (%d active)", active)
+	}
 	bodyWidth := screenContentWidth(m.width)
 	nameColWidth := clampInt(bodyWidth/3, 14, 26)
 	maxRows := 10
@@ -204,7 +225,7 @@ func (m InstallerModel) View() string {
 		theme.Divider(),
 		theme.BoldText.Render("LIVE LOG"),
 		theme.Panel.Width(logPanelWidth).Render(logLines),
-		theme.MutedText.Render("[R] Retry  [S] Skip Failed  [Q] Back"),
+		theme.MutedText.Render("[R] Retry  [S] Skip Failed  [Q/Esc] Back"),
 	}
 	if m.errMsg != "" {
 		content = append(content, renderScreenErrorOverlay(m.errMsg))
@@ -226,24 +247,39 @@ func (m *InstallerModel) SetSize(width int, height int) {
 }
 
 func (m *InstallerModel) updateProgress() {
-	installed, total := m.countInstalled()
+	completed, total, active := m.countJobStates()
 	if total == 0 {
 		m.progress.SetPercent(0)
 		m.progress.SetLabel("waiting for jobs")
 		return
 	}
-	m.progress.SetPercent(float64(installed) / float64(total))
-	m.progress.SetLabel(fmt.Sprintf("%d/%d jobs", installed, total))
+
+	percent := float64(completed) / float64(total)
+	if active > 0 {
+		percent += float64(active) * 0.25 / float64(total)
+		if percent < 0.02 {
+			percent = 0.02
+		}
+		if percent > 0.99 {
+			percent = 0.99
+		}
+		m.progress.SetLabel(fmt.Sprintf("%d/%d completed | %d active", completed, total, active))
+	} else {
+		m.progress.SetLabel(fmt.Sprintf("%d/%d jobs", completed, total))
+	}
+	m.progress.SetPercent(percent)
 }
 
-func (m InstallerModel) countInstalled() (int, int) {
-	installed := 0
+func (m InstallerModel) countJobStates() (completed int, total int, active int) {
 	for _, job := range m.jobs {
 		if job.Status == installer.StatusDone || job.Status == installer.StatusSkipped {
-			installed++
+			completed++
+		}
+		if job.Status == installer.StatusRunning {
+			active++
 		}
 	}
-	return installed, len(m.jobs)
+	return completed, len(m.jobs), active
 }
 
 func (m InstallerModel) renderCategory(category string, title string, maxRows int, nameColWidth int) string {
@@ -286,12 +322,15 @@ func statusSymbol(status installer.InstallStatus) string {
 	}
 }
 
-func startInstallerCmd(inst *installer.Installer) tea.Cmd {
+func startInstallerCmd(ctx context.Context, inst *installer.Installer) tea.Cmd {
 	return func() tea.Msg {
 		if inst == nil {
 			return installerDoneMsg{Err: fmt.Errorf("installer backend is nil")}
 		}
-		err := inst.Run(context.Background())
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		err := inst.Run(ctx)
 		return installerDoneMsg{Err: err}
 	}
 }

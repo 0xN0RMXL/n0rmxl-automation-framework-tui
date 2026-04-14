@@ -79,6 +79,8 @@ func (m ReportViewerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "q", "Q", "esc":
+			return m, func() tea.Msg { return BackToPhaseMenuMsg{} }
 		case "r", "R":
 			return m, m.ReloadCmd()
 		case "m", "M":
@@ -105,7 +107,7 @@ func (m ReportViewerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m ReportViewerModel) View() string {
 	title := theme.RenderTitle("REPORT VIEWER", screenContentWidth(m.width)-2)
 	pathLine := theme.RenderKeyValue("Path", defaultText(m.reportPath, "n/a"))
-	help := theme.MutedText.Render("m markdown  h html  p pdf  o open  c copy path  r reload")
+	help := theme.MutedText.Render("m markdown  h html  p pdf  o open  c copy path  r reload  q/esc back")
 
 	status := ""
 	if m.lastError != "" {

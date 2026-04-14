@@ -37,11 +37,12 @@ type ToolJob struct {
 }
 
 type Installer struct {
-	jobs        []*ToolJob
-	concurrency int
-	progress    chan ToolJob
-	cfg         *config.Config
-	mu          sync.Mutex
+	jobs               []*ToolJob
+	concurrency        int
+	progress           chan ToolJob
+	cfg                *config.Config
+	mu                 sync.Mutex
+	aptUpdateAttempted bool
 }
 
 func NewInstaller(cfg *config.Config) *Installer {
@@ -86,6 +87,9 @@ func (i *Installer) Run(ctx context.Context) error {
 	if len(i.jobs) == 0 {
 		i.RegisterAll()
 	}
+	i.mu.Lock()
+	i.aptUpdateAttempted = false
+	i.mu.Unlock()
 	categories := []string{"system", "go", "post-go", "python", "wordlist", "binary"}
 	for _, category := range categories {
 		if err := i.RunCategory(ctx, category); err != nil {
@@ -96,6 +100,16 @@ func (i *Installer) Run(ctx context.Context) error {
 		return err
 	}
 	return nil
+}
+
+func (i *Installer) consumeAptUpdateAttempt() bool {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	if i.aptUpdateAttempted {
+		return false
+	}
+	i.aptUpdateAttempted = true
+	return true
 }
 
 func (i *Installer) RunCategory(ctx context.Context, category string) error {

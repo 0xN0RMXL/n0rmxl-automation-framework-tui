@@ -104,6 +104,8 @@ func (m DashboardModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "q", "Q", "esc":
+			cmds = append(cmds, func() tea.Msg { return BackToPhaseMenuMsg{} })
 		case "r", "R":
 			reload = true
 		case "0":
@@ -158,7 +160,7 @@ func (m DashboardModel) View() string {
 	workspace := theme.RenderKeyValue("Workspace", defaultText(m.workspace, "No target selected"))
 	filter := theme.RenderKeyValue("Filter", strings.ToUpper(defaultText(m.filter, "all")))
 	help := strings.Join([]string{
-		components.RenderHelpBar(m.globalKeys.Filter),
+		components.RenderHelpBar(m.globalKeys.Filter, m.globalKeys.Back),
 		theme.MutedText.Render("0 all  1 critical  2 high  3 medium  4 low  r reload"),
 	}, "  ")
 

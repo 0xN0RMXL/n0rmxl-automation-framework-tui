@@ -121,7 +121,7 @@ func (m TargetInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.focusCurrentStepInput()
 				return m, nil
 			}
-			return m, nil
+			return m, func() tea.Msg { return BackToSplashMsg{} }
 		case "left":
 			if m.step > stepDomain {
 				m.step--

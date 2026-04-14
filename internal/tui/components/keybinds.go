@@ -3,8 +3,8 @@ package components
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/tui/theme"
+	"github.com/charmbracelet/bubbles/key"
 )
 
 type GlobalKeyMap struct {
@@ -41,8 +41,8 @@ type PhaseKeyMap struct {
 
 func NewGlobalKeyMap() GlobalKeyMap {
 	return GlobalKeyMap{
-		Quit:       key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q", "quit")),
-		Back:       key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
+		Quit:       key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
+		Back:       key.NewBinding(key.WithKeys("esc", "q"), key.WithHelp("esc/q", "back")),
 		Help:       key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
 		NewTarget:  key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new target")),
 		Campaign:   key.NewBinding(key.WithKeys("c"), key.WithHelp("c", "campaign")),
@@ -69,7 +69,7 @@ func NewPhaseKeyMap() PhaseKeyMap {
 		Skip:      key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "skip")),
 		Pause:     key.NewBinding(key.WithKeys("p"), key.WithHelp("p", "pause")),
 		Resume:    key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "resume")),
-		Stop:      key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "stop")),
+		Stop:      key.NewBinding(key.WithKeys("s"), key.WithHelp("s", "stop")),
 		ViewLog:   key.NewBinding(key.WithKeys("l"), key.WithHelp("l", "view log")),
 		ViewFinds: key.NewBinding(key.WithKeys("f"), key.WithHelp("f", "findings")),
 	}
@@ -89,4 +89,3 @@ func RenderHelpBar(keys ...key.Binding) string {
 	}
 	return strings.Join(parts, "  ")
 }
-

@@ -154,6 +154,8 @@ func (m SettingsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleAddKeyModal(msg)
 		}
 		switch msg.String() {
+		case "q", "Q", "esc":
+			return m, func() tea.Msg { return BackToSplashMsg{} }
 		case "left":
 			if m.tab > tabAPIKeys {
 				m.tab--
@@ -313,6 +315,7 @@ func (m SettingsModel) View() string {
 		strings.Join(tabs, "  "),
 		theme.Divider(),
 		content,
+		theme.MutedText.Render("esc/q back  s save"),
 	}, "\n"))
 }
 

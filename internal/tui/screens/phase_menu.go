@@ -97,6 +97,8 @@ func (m PhaseMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "q", "Q", "esc":
+			return m, func() tea.Msg { return BackToSplashMsg{} }
 		case "up", "k":
 			if m.index > 0 {
 				m.index--
@@ -181,7 +183,7 @@ func (m PhaseMenuModel) View() string {
 		components.NewPhaseKeyMap().RunPhase,
 		components.NewPhaseKeyMap().RunAll,
 		components.NewPhaseKeyMap().Skip,
-	)
+	) + "  " + theme.MutedText.Render("q/esc back")
 
 	content := strings.Join([]string{
 		header,

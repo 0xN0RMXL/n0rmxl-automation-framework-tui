@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 )
 
 type aptPackageSpec struct {
@@ -64,7 +65,7 @@ func RegisterSystemTools(i *Installer) {
 				return cmd.Run() == nil
 			},
 			InstallFunc: func(ctx context.Context, job *ToolJob) error {
-				return aptInstall(ctx, p.pkg)
+				return aptInstall(ctx, p.pkg, i)
 			},
 		})
 	}
@@ -88,7 +89,7 @@ func RegisterSystemTools(i *Installer) {
 			return false
 		},
 		InstallFunc: func(ctx context.Context, job *ToolJob) error {
-			if err := aptInstall(ctx, "seclists"); err == nil {
+			if err := aptInstall(ctx, "seclists", i); err == nil {
 				return nil
 			}
 			dest := "/usr/share/seclists"
@@ -110,13 +111,13 @@ func RegisterSystemTools(i *Installer) {
 		},
 		InstallFunc: func(ctx context.Context, job *ToolJob) error {
 			if _, err := exec.LookPath("gem"); err != nil {
-				if err := aptInstall(ctx, "ruby-full"); err != nil {
+				if err := aptInstall(ctx, "ruby-full", i); err != nil {
 					return fmt.Errorf("ruby install failed: %w", err)
 				}
-				if err := aptInstall(ctx, "ruby-dev"); err != nil {
+				if err := aptInstall(ctx, "ruby-dev", i); err != nil {
 					return fmt.Errorf("ruby-dev install failed: %w", err)
 				}
-				if err := aptInstall(ctx, "build-essential"); err != nil {
+				if err := aptInstall(ctx, "build-essential", i); err != nil {
 					return fmt.Errorf("build-essential install failed: %w", err)
 				}
 			}
@@ -212,7 +213,7 @@ func RegisterSystemTools(i *Installer) {
 				issues = append(issues, "deb download failed: "+err.Error())
 			}
 
-			if err := installRustscanWithCargo(ctx); err == nil {
+			if err := installRustscanWithCargo(ctx, i); err == nil {
 				return nil
 			} else {
 				issues = append(issues, "cargo fallback failed: "+err.Error())
@@ -388,31 +389,78 @@ func RegisterSystemTools(i *Installer) {
 	})
 }
 
-func aptInstall(ctx context.Context, pkg string) error {
+func aptInstall(ctx context.Context, pkg string, inst *Installer) error {
 	if runtime.GOOS != "linux" {
 		return fmt.Errorf("apt install is only supported on linux")
 	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
 
-	update := exec.CommandContext(ctx, "sudo", "apt-get", "update")
-	update.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
-	if out, err := update.CombinedOutput(); err != nil {
-		update2 := exec.CommandContext(ctx, "apt-get", "update")
-		update2.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
-		if out2, err2 := update2.CombinedOutput(); err2 != nil {
-			return fmt.Errorf("apt update failed: %w\n%s\n%s", err2, strings.TrimSpace(string(out)), strings.TrimSpace(string(out2)))
+	if inst == nil || inst.consumeAptUpdateAttempt() {
+		if err := runAptWithFallback(ctx, 4*time.Minute, "update"); err != nil {
+			return fmt.Errorf("apt update failed: %w", err)
 		}
 	}
 
-	install := exec.CommandContext(ctx, "sudo", "apt-get", "install", "-y", pkg)
-	install.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
-	if out, err := install.CombinedOutput(); err != nil {
-		install2 := exec.CommandContext(ctx, "apt-get", "install", "-y", pkg)
-		install2.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
-		if out2, err2 := install2.CombinedOutput(); err2 != nil {
-			return fmt.Errorf("apt install %s failed: %w\n%s\n%s", pkg, err2, strings.TrimSpace(string(out)), strings.TrimSpace(string(out2)))
-		}
+	if err := runAptWithFallback(ctx, 10*time.Minute, "install", "-y", pkg); err != nil {
+		return fmt.Errorf("apt install %s failed: %w", pkg, err)
 	}
 	return nil
+}
+
+func runAptWithFallback(ctx context.Context, timeout time.Duration, args ...string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("apt arguments cannot be empty")
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	env := append(os.Environ(),
+		"DEBIAN_FRONTEND=noninteractive",
+		"APT_LISTCHANGES_FRONTEND=none",
+	)
+	attempts := []struct {
+		bin  string
+		args []string
+	}{
+		{bin: "sudo", args: append([]string{"-n", "apt-get"}, args...)},
+		{bin: "apt-get", args: args},
+	}
+
+	failures := make([]string, 0, len(attempts))
+	for _, attempt := range attempts {
+		cmdCtx := ctx
+		cancel := func() {}
+		if timeout > 0 {
+			cmdCtx, cancel = context.WithTimeout(ctx, timeout)
+		}
+
+		cmd := exec.CommandContext(cmdCtx, attempt.bin, attempt.args...)
+		cmd.Env = env
+		cmd.Stdin = strings.NewReader("")
+		out, err := cmd.CombinedOutput()
+		cancel()
+		if err == nil {
+			return nil
+		}
+
+		output := strings.TrimSpace(string(out))
+		if output == "" {
+			output = err.Error()
+		}
+		failures = append(failures, fmt.Sprintf("%s %s => %s", attempt.bin, strings.Join(attempt.args, " "), output))
+
+		if cmdCtx.Err() != nil {
+			break
+		}
+	}
+
+	if len(failures) == 0 {
+		return fmt.Errorf("all apt attempts failed")
+	}
+	return fmt.Errorf("%s", strings.Join(failures, " | "))
 }
 
 func downloadFile(ctx context.Context, url, dest string) error {
@@ -562,9 +610,9 @@ func installDebPackage(ctx context.Context, debPath string) error {
 	return nil
 }
 
-func installRustscanWithCargo(ctx context.Context) error {
+func installRustscanWithCargo(ctx context.Context, inst *Installer) error {
 	if _, err := exec.LookPath("cargo"); err != nil {
-		if installErr := aptInstall(ctx, "cargo"); installErr != nil {
+		if installErr := aptInstall(ctx, "cargo", inst); installErr != nil {
 			return fmt.Errorf("cargo not found and apt install failed: %w", installErr)
 		}
 	}
