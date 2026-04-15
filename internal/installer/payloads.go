@@ -74,6 +74,7 @@ func syncGitRepository(ctx context.Context, repoURL string, targetPath string) e
 
 	if info, err := os.Stat(filepath.Join(targetPath, ".git")); err == nil && info.IsDir() {
 		cmd := exec.CommandContext(ctx, "git", "-C", targetPath, "pull", "--ff-only")
+		cmd.Env = buildGitEnv(os.Environ())
 		out, runErr := cmd.CombinedOutput()
 		if runErr != nil {
 			return fmt.Errorf("git pull failed for %s: %w: %s", targetPath, runErr, strings.TrimSpace(string(out)))
@@ -96,11 +97,8 @@ func syncGitRepository(ctx context.Context, repoURL string, targetPath string) e
 		return fmt.Errorf("failed to inspect target path %s: %w", targetPath, err)
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "clone", "--depth", "1", repoURL, targetPath)
-	out, runErr := cmd.CombinedOutput()
-	if runErr != nil {
-		return fmt.Errorf("git clone failed for %s: %w: %s", repoURL, runErr, strings.TrimSpace(string(out)))
+	if err := gitCloneShallow(ctx, repoURL, targetPath, false); err != nil {
+		return fmt.Errorf("git clone failed for %s: %w", repoURL, err)
 	}
 	return nil
 }
-

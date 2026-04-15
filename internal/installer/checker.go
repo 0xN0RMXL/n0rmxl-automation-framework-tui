@@ -3,9 +3,7 @@ package installer
 import (
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/0xN0RMXL/n0rmxl-automation-framework-tui/internal/config"
@@ -88,12 +86,4 @@ func detectVersion(name string) string {
 		}
 	}
 	return "unknown"
-}
-
-func defaultDataDir() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "."
-	}
-	return filepath.Join(home, ".local", "share", "n0rmxl")
 }

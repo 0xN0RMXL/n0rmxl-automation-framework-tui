@@ -170,7 +170,21 @@ func (i *Installer) RunCategory(ctx context.Context, category string) error {
 					i.setJobStatus(job, StatusFailed, err.Error())
 					continue
 				}
-				i.setJobStatus(job, StatusDone, "installed")
+
+				if job.Status == StatusSkipped {
+					msg := strings.TrimSpace(job.Output)
+					if msg == "" {
+						msg = "skipped"
+					}
+					i.setJobStatus(job, StatusSkipped, msg)
+					continue
+				}
+
+				msg := strings.TrimSpace(job.Output)
+				if msg == "" {
+					msg = "installed"
+				}
+				i.setJobStatus(job, StatusDone, msg)
 			}
 		}()
 	}

@@ -34,7 +34,6 @@ var pipTools = []string{
 	"s3scanner",
 	"subdominator",
 	"clairvoyance",
-	"hacker-scoper",
 }
 
 var gitPythonTools = []GitTool{
@@ -45,7 +44,6 @@ var gitPythonTools = []GitTool{
 	{Name: "GitDorker", Repo: "https://github.com/obheda12/GitDorker", ReqFile: "requirements.txt"},
 	{Name: "SSRFmap", Repo: "https://github.com/swisskyrepo/SSRFmap", ReqFile: "requirements.txt"},
 	{Name: "jwt_tool", Repo: "https://github.com/ticarpi/jwt_tool", ReqFile: "requirements.txt"},
-	{Name: "commix", Repo: "https://github.com/commixproject/commix", Setup: "python3 commix.py --install"},
 	{Name: "cloud_enum", Repo: "https://github.com/initstring/cloud_enum", ReqFile: "requirements.txt"},
 	{Name: "paramspider", Repo: "https://github.com/devanshbatham/ParamSpider", ReqFile: "requirements.txt"},
 	{Name: "graphw00f", Repo: "https://github.com/dolevf/graphw00f", ReqFile: "requirements.txt"},
@@ -137,9 +135,11 @@ func RegisterPythonTools(i *Installer) {
 				}
 				pythonCmd := detectPythonCommand()
 				if _, err := os.Stat(clonePath); err == nil {
-					_, _ = runShellCommand(ctx, fmt.Sprintf("git -C %q pull --ff-only", clonePath))
+					pull := exec.CommandContext(ctx, "git", "-C", clonePath, "pull", "--ff-only")
+					pull.Env = buildGitEnv(os.Environ())
+					_, _ = pull.CombinedOutput()
 				} else {
-					if _, err := runShellCommand(ctx, fmt.Sprintf("git clone %s %q", g.Repo, clonePath)); err != nil {
+					if err := gitCloneShallow(ctx, g.Repo, clonePath, false); err != nil {
 						return err
 					}
 				}
@@ -161,6 +161,120 @@ func RegisterPythonTools(i *Installer) {
 			},
 		})
 	}
+
+	i.Register(&ToolJob{
+		Name:        "hacker-scoper",
+		Category:    "python",
+		Description: "Scope-based result filtering helper",
+		Required:    false,
+		CheckFunc: func() bool {
+			if _, err := exec.LookPath("hacker-scoper"); err == nil {
+				return true
+			}
+			pythonCmd := detectPythonCommand()
+			if pythonCmd == "" {
+				return false
+			}
+			_, err := runShellCommand(context.Background(), fmt.Sprintf("%s -c \"import hacker_scoper\"", pythonCmd))
+			return err == nil
+		},
+		InstallFunc: func(ctx context.Context, job *ToolJob) error {
+			if err := ensurePythonRuntime(ctx); err != nil {
+				return err
+			}
+			pythonCmd := detectPythonCommand()
+			if pythonCmd == "" {
+				return fmt.Errorf("python runtime not found after bootstrap")
+			}
+
+			pipInstallCmd := fmt.Sprintf("%s -m pip install --break-system-packages git+https://github.com/Amet13/hacker-scoper.git", pythonCmd)
+			if _, err := runShellCommand(ctx, pipInstallCmd); err == nil {
+				return nil
+			}
+
+			clonePath, err := gitClonePath(i.cfg, "hacker-scoper")
+			if err != nil {
+				return err
+			}
+			if _, err := os.Stat(clonePath); err == nil {
+				pull := exec.CommandContext(ctx, "git", "-C", clonePath, "pull", "--ff-only")
+				pull.Env = buildGitEnv(os.Environ())
+				_, _ = pull.CombinedOutput()
+			} else {
+				if err := gitCloneShallow(ctx, "https://github.com/Amet13/hacker-scoper.git", clonePath, false); err != nil {
+					return fmt.Errorf("hacker-scoper clone failed: %w", err)
+				}
+			}
+
+			_, err = runShellCommand(ctx, fmt.Sprintf("%s -m pip install --break-system-packages %q", pythonCmd, clonePath))
+			if err != nil {
+				return fmt.Errorf("hacker-scoper install failed: %w", err)
+			}
+			return nil
+		},
+	})
+
+	i.Register(&ToolJob{
+		Name:        "commix",
+		Category:    "python",
+		Description: "Automated command injection exploitation tool",
+		Required:    false,
+		CheckFunc: func() bool {
+			if _, err := exec.LookPath("commix"); err == nil {
+				return true
+			}
+			clonePath, err := gitClonePath(i.cfg, "commix")
+			if err != nil {
+				return false
+			}
+			if _, err := os.Stat(filepath.Join(clonePath, "commix.py")); err == nil {
+				return true
+			}
+			wrapper := filepath.Join(defaultDataDir(), "scripts", commixWrapperName())
+			_, err = os.Stat(wrapper)
+			return err == nil
+		},
+		InstallFunc: func(ctx context.Context, job *ToolJob) error {
+			if err := ensurePythonRuntime(ctx); err != nil {
+				return err
+			}
+
+			clonePath, err := gitClonePath(i.cfg, "commix")
+			if err != nil {
+				return err
+			}
+
+			if _, err := os.Stat(clonePath); err == nil {
+				pull := exec.CommandContext(ctx, "git", "-C", clonePath, "pull", "--ff-only")
+				pull.Env = buildGitEnv(os.Environ())
+				_, _ = pull.CombinedOutput()
+			} else {
+				if err := gitCloneShallow(ctx, "https://github.com/commixproject/commix.git", clonePath, false); err != nil {
+					return err
+				}
+			}
+
+			mainFile := filepath.Join(clonePath, "commix.py")
+			if _, err := os.Stat(mainFile); err != nil {
+				return fmt.Errorf("commix clone is incomplete: %w", err)
+			}
+
+			pythonCmd := detectPythonCommand()
+			if pythonCmd != "" {
+				reqFile := filepath.Join(clonePath, "requirements.txt")
+				if _, err := os.Stat(reqFile); err == nil {
+					_, _ = runShellCommand(ctx, fmt.Sprintf("%s -m pip install --break-system-packages -r %q", pythonCmd, reqFile))
+				}
+			}
+
+			wrapperPath, err := ensureCommixWrapper(clonePath)
+			if err != nil {
+				return err
+			}
+			job.Output = "commix available via clone at " + clonePath + " and wrapper " + wrapperPath
+			return nil
+		},
+	})
 }
 
 func gitClonePath(cfg *config.Config, name string) (string, error) {
@@ -265,4 +379,34 @@ func bootstrapPythonRuntime(ctx context.Context) error {
 	default:
 		return fmt.Errorf("automatic python bootstrap is not supported on %s", runtime.GOOS)
 	}
+}
+
+func commixWrapperName() string {
+	if runtime.GOOS == "windows" {
+		return "commix.cmd"
+	}
+	return "commix"
+}
+
+func ensureCommixWrapper(clonePath string) (string, error) {
+	scriptDir := filepath.Join(defaultDataDir(), "scripts")
+	if err := os.MkdirAll(scriptDir, 0o755); err != nil {
+		return "", err
+	}
+
+	wrapperPath := filepath.Join(scriptDir, commixWrapperName())
+	mainFile := filepath.Join(clonePath, "commix.py")
+	if runtime.GOOS == "windows" {
+		content := fmt.Sprintf("@echo off\r\npython \"%s\" %%*\r\n", mainFile)
+		if err := os.WriteFile(wrapperPath, []byte(content), 0o755); err != nil {
+			return "", err
+		}
+		return wrapperPath, nil
+	}
+
+	content := fmt.Sprintf("#!/usr/bin/env sh\nexec python3 %q \"$@\"\n", mainFile)
+	if err := os.WriteFile(wrapperPath, []byte(content), 0o755); err != nil {
+		return "", err
+	}
+	return wrapperPath, nil
 }

@@ -463,28 +463,6 @@ func runAptWithFallback(ctx context.Context, timeout time.Duration, args ...stri
 	return fmt.Errorf("%s", strings.Join(failures, " | "))
 }
 
-func downloadFile(ctx context.Context, url, dest string) error {
-	cmd := exec.CommandContext(ctx, "curl", "-fsSL", "-o", dest, url)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("curl download failed for %s: %w\n%s", url, err, strings.TrimSpace(string(out)))
-	}
-	return nil
-}
-
-func installBinary(ctx context.Context, src, dest string) error {
-	if err := copyFile(src, dest); err == nil {
-		return nil
-	}
-
-	cmd := exec.CommandContext(ctx, "sudo", "cp", src, dest)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("install binary %s -> %s failed: %w\n%s", src, dest, err, strings.TrimSpace(string(out)))
-	}
-	return nil
-}
-
 func ensureExecutable(ctx context.Context, path string) error {
 	if err := os.Chmod(path, 0o755); err == nil {
 		return nil
@@ -494,50 +472,6 @@ func ensureExecutable(ctx context.Context, path string) error {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("chmod 755 %s failed: %w\n%s", path, err, strings.TrimSpace(string(out)))
-	}
-	return nil
-}
-
-func copyFile(src, dest string) error {
-	in, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer in.Close()
-
-	out, err := os.OpenFile(dest, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o755)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	if _, err := io.Copy(out, in); err != nil {
-		return err
-	}
-	return nil
-}
-
-func gitCloneShallow(ctx context.Context, repoURL, dest string, withSudo bool) error {
-	if _, err := os.Stat(dest); err == nil {
-		return nil
-	}
-
-	_ = os.MkdirAll(filepath.Dir(dest), 0o755)
-
-	clone := exec.CommandContext(ctx, "git", "clone", "--depth", "1", repoURL, dest)
-	out, err := clone.CombinedOutput()
-	if err == nil {
-		return nil
-	}
-
-	if !withSudo {
-		return fmt.Errorf("git clone failed for %s: %w\n%s", repoURL, err, strings.TrimSpace(string(out)))
-	}
-
-	clone2 := exec.CommandContext(ctx, "sudo", "git", "clone", "--depth", "1", repoURL, dest)
-	out2, err2 := clone2.CombinedOutput()
-	if err2 != nil {
-		return fmt.Errorf("git clone failed for %s: %w\n%s\n%s", repoURL, err2, strings.TrimSpace(string(out)), strings.TrimSpace(string(out2)))
 	}
 	return nil
 }
